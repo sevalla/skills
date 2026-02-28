@@ -9,8 +9,11 @@
 #   git clone https://github.com/sevalla-hosting/skills.git
 #   cd skills && ./scripts/install.sh
 #
+#   # Via npx:
+#   npx skills add sevalla-hosting/skills
+#
 #   # Or pipe from curl:
-#   curl -fsSL https://skills.sh | bash
+#   curl -fsSL https://sevalla.com/skills.sh | bash
 
 set -euo pipefail
 
