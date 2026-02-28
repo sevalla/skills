@@ -17,41 +17,40 @@
 
 set -euo pipefail
 
-# ── Colours ────────────────────────────────────────────────────────────────
+# ── Colours (ANSI-C quoting so escape chars are real) ─────────────────────
 
 if [[ -t 1 ]]; then
-  RED='\033[0;31m'
-  GREEN='\033[0;32m'
-  YELLOW='\033[0;33m'
-  CYAN='\033[0;36m'
-  MAGENTA='\033[0;35m'
-  BOLD='\033[1m'
-  DIM='\033[2m'
-  RESET='\033[0m'
+  RED=$'\033[0;31m'
+  GREEN=$'\033[0;32m'
+  YELLOW=$'\033[0;33m'
+  CYAN=$'\033[0;36m'
+  MAGENTA=$'\033[0;35m'
+  WHITE=$'\033[1;37m'
+  BOLD=$'\033[1m'
+  DIM=$'\033[2m'
+  RESET=$'\033[0m'
 else
-  RED='' GREEN='' YELLOW='' CYAN='' MAGENTA='' BOLD='' DIM='' RESET=''
+  RED='' GREEN='' YELLOW='' CYAN='' MAGENTA='' WHITE='' BOLD='' DIM='' RESET=''
 fi
 
-# ── Helpers ────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────
 
-step()    { printf "  ${CYAN}>${RESET} %s\n" "$1"; }
-ok()      { printf "  ${GREEN}✓${RESET} %s\n" "$1"; }
-err()     { printf "  ${RED}✗${RESET} %s\n" "$1" >&2; }
-dimtext() { printf "  ${DIM}%s${RESET}\n" "$1"; }
+step()    { printf "  %s>%s %s\n" "$CYAN" "$RESET" "$1"; }
+ok()      { printf "  %s✓%s %s\n" "$GREEN" "$RESET" "$1"; }
+err()     { printf "  %s✗%s %s\n" "$RED" "$RESET" "$1" >&2; }
 
-# ── Banner ─────────────────────────────────────────────────────────────────
+# ── Banner ────────────────────────────────────────────────────────────────
 
 printf "\n"
-printf "${MAGENTA}${BOLD}"
-printf "   ___  ____  _  _  __   __    __     __  \n"
-printf "  / __)( ___)( \\/ )/__\\ (  )  (  )   /__\\ \n"
-printf "  \\__ \\ )__) \\  //(__)\\  )(__  )(__  /(__)\\   \n"
-printf "  (___/(____) \\/ (__)(__)(____)(____)(__)(__)  \n"
-printf "${RESET}\n"
-printf "  ${DIM}Agent skills for AI coding tools${RESET}\n"
+printf "%s\n" "$MAGENTA"
+printf "   ╔═╗╔═╗╦  ╦╔═╗╦  ╦  ╔═╗\n"
+printf "   ╚═╗║╣ ╚╗╔╝╠═╣║  ║  ╠═╣\n"
+printf "   ╚═╝╚═╝ ╚╝ ╩ ╩╩═╝╩═╝╩ ╩\n"
+printf "%s\n" "$RESET"
+printf "   %sSkills Installer%s\n" "$DIM" "$RESET"
 printf "\n"
 
-# ── Resolve source directory ───────────────────────────────────────────────
+# ── Resolve source directory ──────────────────────────────────────────────
 
 TMPDIR_CLEANUP=""
 
@@ -101,9 +100,9 @@ resolve_source_dir
 SKILL_SRC="$SOURCE_DIR/plugins/sevalla/skills/use-sevalla"
 HOOKS_SRC="$SOURCE_DIR/plugins/sevalla/hooks"
 
-# ── Detect AI tools ───────────────────────────────────────────────────────
+# ── Detect AI tools ──────────────────────────────────────────────────────
 
-printf "  ${BOLD}Scanning for AI tools${RESET}\n\n"
+printf "  %sScanning for AI tools%s\n\n" "$BOLD" "$RESET"
 
 # Tool definitions: name|config_dir|supports_hooks
 TOOLS=(
@@ -125,7 +124,7 @@ for entry in "${TOOLS[@]}"; do
     FOUND_DIRS+=("$dir")
     FOUND_HOOKS+=("$hooks")
   else
-    dimtext "  ${name}  not found"
+    printf "  %s  ·  %s  not found%s\n" "$DIM" "$name" "$RESET"
   fi
 done
 
@@ -134,19 +133,18 @@ printf "\n"
 if [[ ${#FOUND_NAMES[@]} -eq 0 ]]; then
   err "No supported AI tools detected."
   printf "\n"
-  dimtext "Install one of these tools first:"
-  printf "\n"
-  dimtext "  Claude Code   https://docs.anthropic.com/en/docs/claude-code"
-  dimtext "  Cursor        https://cursor.com"
-  dimtext "  Codex         https://openai.com/codex"
-  dimtext "  OpenCode      https://opencode.ai"
+  printf "  %sInstall one of these tools first:%s\n\n" "$DIM" "$RESET"
+  printf "  %s  Claude Code   https://docs.anthropic.com/en/docs/claude-code%s\n" "$DIM" "$RESET"
+  printf "  %s  Cursor        https://cursor.com%s\n" "$DIM" "$RESET"
+  printf "  %s  Codex         https://openai.com/codex%s\n" "$DIM" "$RESET"
+  printf "  %s  OpenCode      https://opencode.ai%s\n" "$DIM" "$RESET"
   printf "\n"
   exit 1
 fi
 
-# ── Install ────────────────────────────────────────────────────────────────
+# ── Install ───────────────────────────────────────────────────────────────
 
-printf "  ${BOLD}Installing${RESET}\n\n"
+printf "  %sInstalling%s\n\n" "$BOLD" "$RESET"
 
 INSTALLED=0
 
@@ -155,7 +153,6 @@ for i in "${!FOUND_NAMES[@]}"; do
   dir="${FOUND_DIRS[$i]}"
   hooks="${FOUND_HOOKS[$i]}"
 
-  # Install skill files
   dest="$dir/skills/use-sevalla"
   mkdir -p "$dest"
   cp -R "$SKILL_SRC/"* "$dest/"
@@ -172,32 +169,29 @@ for i in "${!FOUND_NAMES[@]}"; do
   INSTALLED=$((INSTALLED + 1))
 done
 
-# ── Success ────────────────────────────────────────────────────────────────
+# ── Success ───────────────────────────────────────────────────────────────
 
 printf "\n"
-printf "  ┌─────────────────────────────────────┐\n"
-printf "  │                                     │\n"
-printf "  │  ${GREEN}${BOLD}Done!${RESET} Installed for ${BOLD}${INSTALLED}${RESET} tool(s)        │\n"
-printf "  │                                     │\n"
-printf "  └─────────────────────────────────────┘\n"
+printf "  %s%s✓ Installed for %d tool(s)%s\n" "$GREEN" "$BOLD" "$INSTALLED" "$RESET"
 printf "\n"
+printf "  ─────────────────────────────────────\n"
+printf "\n"
+printf "  %sNext steps%s\n\n" "$BOLD" "$RESET"
 
-printf "  ${BOLD}Next steps${RESET}\n\n"
-
-printf "  ${CYAN}1.${RESET} Connect the MCP server ${DIM}(recommended)${RESET}\n\n"
+printf "  %s1.%s Connect the MCP server %s(recommended)%s\n\n" "$CYAN" "$RESET" "$DIM" "$RESET"
 printf "     Add to your MCP config:\n\n"
-printf "     ${DIM}┌──────────────────────────────────────────────────┐${RESET}\n"
-printf "     ${DIM}│${RESET}  \"sevalla\": {                                   ${DIM}│${RESET}\n"
-printf "     ${DIM}│${RESET}    \"type\": \"url\",                               ${DIM}│${RESET}\n"
-printf "     ${DIM}│${RESET}    \"url\": \"${CYAN}https://mcp.sevalla.com/mcp${RESET}\",        ${DIM}│${RESET}\n"
-printf "     ${DIM}│${RESET}    \"headers\": {                                 ${DIM}│${RESET}\n"
-printf "     ${DIM}│${RESET}      \"Authorization\": \"Bearer ${YELLOW}<api-key>${RESET}\"       ${DIM}│${RESET}\n"
-printf "     ${DIM}│${RESET}    }                                            ${DIM}│${RESET}\n"
-printf "     ${DIM}│${RESET}  }                                              ${DIM}│${RESET}\n"
-printf "     ${DIM}└──────────────────────────────────────────────────┘${RESET}\n"
+printf "     %s┌──────────────────────────────────────────────────┐%s\n" "$DIM" "$RESET"
+printf "     %s│%s  \"sevalla\": {                                   %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"type\": \"url\",                               %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",        %s│%s\n" "$DIM" "$RESET" "$CYAN" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"headers\": {                                 %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s      \"Authorization\": \"Bearer %s<api-key>%s\"       %s│%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    }                                            %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s  }                                              %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s└──────────────────────────────────────────────────┘%s\n" "$DIM" "$RESET"
 printf "\n"
-printf "  ${CYAN}2.${RESET} Or just set an API key\n\n"
-printf "     ${DIM}export${RESET} SEVALLA_API_KEY=${YELLOW}<your-api-key>${RESET}\n"
+printf "  %s2.%s Or just set an API key\n\n" "$CYAN" "$RESET"
+printf "     %sexport%s SEVALLA_API_KEY=%s<your-api-key>%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET"
 printf "\n"
-printf "  ${DIM}Get your API key at ${CYAN}https://app.sevalla.com/api-keys${RESET}\n"
+printf "  %sGet your API key → %s%shttps://app.sevalla.com/api-keys%s\n" "$DIM" "$RESET" "$CYAN" "$RESET"
 printf "\n"
