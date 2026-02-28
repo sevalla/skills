@@ -1,0 +1,9 @@
+{
+  "hooks": [
+    {
+      "matcher": "Bash",
+      "event": "PreToolUse",
+      "command": "bash plugins/sevalla/hooks/auto-approve-mcp.sh \"$TOOL_INPUT\""
+    }
+  ]
+}

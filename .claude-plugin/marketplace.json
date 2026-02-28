@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sevalla-skills",
+  "description": "Sevalla agent skills for Claude Code",
+  "owner": {
+    "name": "Sevalla",
+    "email": "support@sevalla.com"
+  },
+  "plugins": [
+    {
+      "name": "sevalla",
+      "description": "Sevalla tools for Claude Code - manage applications, databases, deployments, and infrastructure",
+      "author": { "name": "Sevalla" },
+      "source": "./plugins/sevalla",
+      "category": "productivity"
+    }
+  ]
+}

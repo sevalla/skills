@@ -1,0 +1,8 @@
+{
+  "name": "sevalla",
+  "version": "1.0.0",
+  "description": "Sevalla tools for Claude Code",
+  "author": { "name": "Sevalla", "email": "support@sevalla.com" },
+  "repository": "https://github.com/sevalla-hosting/skills",
+  "license": "MIT"
+}
