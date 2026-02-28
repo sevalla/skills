@@ -28,7 +28,7 @@ claude plugin add sevalla-hosting/skills
 ### Other AI Tools
 
 ```bash
-curl -fsSL https://sevalla.com/skills.sh | bash
+curl -fsSL https://skills.sh | bash
 ```
 
 Supports Claude Code, Cursor, Codex, and OpenCode. Or clone and run `./scripts/install.sh` manually.

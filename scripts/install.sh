@@ -10,7 +10,7 @@
 #   cd skills && ./scripts/install.sh
 #
 #   # Or pipe from curl:
-#   curl -fsSL https://sevalla.com/skills.sh | bash
+#   curl -fsSL https://skills.sh | bash
 
 set -euo pipefail
 
