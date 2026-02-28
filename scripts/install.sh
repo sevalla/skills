@@ -42,15 +42,14 @@ dimtext() { printf "  ${DIM}%s${RESET}\n" "$1"; }
 # ── Banner ─────────────────────────────────────────────────────────────────
 
 printf "\n"
-printf "${BOLD}"
-printf "  ┌─────────────────────────────────────┐\n"
-printf "  │                                     │\n"
-printf "  │         ${MAGENTA}Sevalla Skills${RESET}${BOLD}              │\n"
-printf "  │                                     │\n"
-printf "  │   ${RESET}${DIM}Agent skills for AI coding tools${RESET}${BOLD}   │\n"
-printf "  │                                     │\n"
-printf "  └─────────────────────────────────────┘\n"
+printf "${MAGENTA}${BOLD}"
+printf "   ___  ____  _  _  __   __    __     __  \n"
+printf "  / __)( ___)( \\/ )/__\\ (  )  (  )   /__\\ \n"
+printf "  \\__ \\ )__) \\  //(__)\\  )(__  )(__  /(__)\\   \n"
+printf "  (___/(____) \\/ (__)(__)(____)(____)(__)(__)  \n"
 printf "${RESET}\n"
+printf "  ${DIM}Agent skills for AI coding tools${RESET}\n"
+printf "\n"
 
 # ── Resolve source directory ───────────────────────────────────────────────
 
