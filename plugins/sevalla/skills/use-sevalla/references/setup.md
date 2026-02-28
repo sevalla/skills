@@ -470,3 +470,56 @@ All create operations require `company_id` and `project_id`. If you receive a 40
 ### After creating any resource
 
 Always report the returned `id` to the user. They will need it for subsequent operations such as deploying, configuring environment variables, or connecting databases to applications.
+
+---
+
+## Delete Resources
+
+**Always confirm with the user before deleting any resource. Deletion is irreversible.**
+
+### Delete Application
+
+```js
+async () => {
+  const res = await sevalla.request({ method: "DELETE", path: "/applications/APP_ID" })
+  return { status: res.status }
+}
+```
+
+### Delete Database
+
+```js
+async () => {
+  const res = await sevalla.request({ method: "DELETE", path: "/databases/DB_ID" })
+  return { status: res.status }
+}
+```
+
+### Delete Static Site
+
+```js
+async () => {
+  const res = await sevalla.request({ method: "DELETE", path: "/static-sites/STATIC_SITE_ID" })
+  return { status: res.status }
+}
+```
+
+### Delete Object Storage Bucket
+
+```js
+async () => {
+  const res = await sevalla.request({ method: "DELETE", path: "/object-storage/BUCKET_ID" })
+  return { status: res.status }
+}
+```
+
+### Delete Project
+
+```js
+async () => {
+  const res = await sevalla.request({ method: "DELETE", path: "/projects/PROJECT_ID" })
+  return { status: res.status }
+}
+```
+
+A successful delete returns HTTP 204 (No Content).

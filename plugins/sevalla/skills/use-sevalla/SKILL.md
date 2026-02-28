@@ -39,6 +39,22 @@ If `search` and `execute` MCP tools are available (from the Sevalla MCP server a
 - **`search` tool** — Write JavaScript to explore the OpenAPI specification. The `spec` global contains the full resolved API spec. Use it to discover endpoints, parameters, request/response schemas, and required fields before making calls.
 - **`execute` tool** — Write JavaScript to call API endpoints. The `sevalla` global provides `sevalla.request({ method, path, query, body })` which handles authentication, base URL, and response parsing automatically.
 
+Example `search` usage to discover endpoints for a resource:
+
+```js
+async () => {
+  const results = []
+  for (const [path, methods] of Object.entries(spec.paths)) {
+    if (path.includes('applications')) {
+      for (const [method, op] of Object.entries(methods)) {
+        results.push({ method: method.toUpperCase(), path, summary: op.summary })
+      }
+    }
+  }
+  return results
+}
+```
+
 ### Fallback: sevalla-api.sh
 
 If MCP tools are unavailable, use the shell helper script:

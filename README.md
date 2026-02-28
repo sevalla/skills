@@ -34,12 +34,13 @@ Supports Claude Code, Cursor, Codex, and OpenCode.
 
 Add the Sevalla MCP server to your AI tool's configuration. The skill will automatically use the `search` and `execute` MCP tools.
 
-For Claude Code, add to `~/.claude/claude_desktop_config.json`:
+For Claude Code, add to your project's `.mcp.json` or `~/.claude.json`:
 
 ```json
 {
   "mcpServers": {
     "sevalla": {
+      "type": "url",
       "url": "https://mcp.sevalla.com/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_SEVALLA_API_KEY"

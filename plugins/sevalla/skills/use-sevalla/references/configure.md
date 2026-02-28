@@ -285,6 +285,22 @@ DELETE /databases/{id}/internal-connections/{connection_id}
 
 After creating an internal connection, set the internal hostname and port as environment variables on the application. The internal hostname is returned in the connection response. Both the application and the database must be in the same data center region.
 
+### Toggle External Database Connection
+
+Enable or disable public internet access to a database (useful for connecting from local development tools, running migrations, or external monitoring):
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "POST",
+    path: "/databases/DB_ID/external-connection/toggle"
+  })
+  return res.body
+}
+```
+
+When external connections are enabled, the database becomes accessible via its `external_hostname` and `external_port`. Disable external connections when not needed to reduce attack surface.
+
 ## TCP Proxies
 
 Expose non-HTTP services to the internet. Use TCP proxies for protocols like WebSocket, MongoDB, RabbitMQ, or any custom TCP protocol.
