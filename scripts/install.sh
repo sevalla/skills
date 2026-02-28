@@ -124,7 +124,7 @@ for entry in "${TOOLS[@]}"; do
     FOUND_DIRS+=("$dir")
     FOUND_HOOKS+=("$hooks")
   else
-    printf "  %s  ·  %s  not found%s\n" "$DIM" "$name" "$RESET"
+    printf "  %s· %s  %snot found%s\n" "$DIM" "$name" "$DIM" "$RESET"
   fi
 done
 
@@ -181,13 +181,13 @@ printf "  %sNext steps%s\n\n" "$BOLD" "$RESET"
 printf "  %s1.%s Connect the MCP server %s(recommended)%s\n\n" "$CYAN" "$RESET" "$DIM" "$RESET"
 printf "     Add to your MCP config:\n\n"
 printf "     %s┌──────────────────────────────────────────────────┐%s\n" "$DIM" "$RESET"
-printf "     %s│%s  \"sevalla\": {                                   %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"type\": \"url\",                               %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",        %s│%s\n" "$DIM" "$RESET" "$CYAN" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"headers\": {                                 %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s      \"Authorization\": \"Bearer %s<api-key>%s\"       %s│%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    }                                            %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s  }                                              %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s  \"sevalla\": {                                    %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"type\": \"url\",                                %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",         %s│%s\n" "$DIM" "$RESET" "$CYAN" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"headers\": {                                  %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s      \"Authorization\": \"Bearer %s<api-key>%s\"         %s│%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    }                                             %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s  }                                               %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
 printf "     %s└──────────────────────────────────────────────────┘%s\n" "$DIM" "$RESET"
 printf "\n"
 printf "  %s2.%s Or just set an API key\n\n" "$CYAN" "$RESET"
