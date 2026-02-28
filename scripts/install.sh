@@ -179,7 +179,19 @@ printf "\n"
 printf "  %sNext steps%s\n\n" "$BOLD" "$RESET"
 
 printf "  %s1.%s Connect the MCP server %s(recommended)%s\n\n" "$CYAN" "$RESET" "$DIM" "$RESET"
-printf "     Add to your MCP config:\n\n"
+
+# Show config file paths for each installed tool
+for i in "${!FOUND_NAMES[@]}"; do
+  name="${FOUND_NAMES[$i]}"
+  case "$name" in
+    "Claude Code")  printf "     %s·%s Claude Code  %s.mcp.json%s or %s~/.claude.json%s\n" "$DIM" "$RESET" "$BOLD" "$RESET" "$BOLD" "$RESET" ;;
+    "Cursor")       printf "     %s·%s Cursor       %s.cursor/mcp.json%s\n" "$DIM" "$RESET" "$BOLD" "$RESET" ;;
+    "OpenAI Codex") printf "     %s·%s Codex        %scodex.json%s\n" "$DIM" "$RESET" "$BOLD" "$RESET" ;;
+    "OpenCode")     printf "     %s·%s OpenCode     %s.opencode/config.json%s\n" "$DIM" "$RESET" "$BOLD" "$RESET" ;;
+  esac
+done
+
+printf "\n     Add this to %smcpServers%s:\n\n" "$BOLD" "$RESET"
 printf "     %s┌──────────────────────────────────────────────────┐%s\n" "$DIM" "$RESET"
 printf "     %s│%s  \"sevalla\": {                                    %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
 printf "     %s│%s    \"type\": \"url\",                                %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
