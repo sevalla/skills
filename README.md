@@ -49,7 +49,6 @@ Pair with the [Sevalla MCP Server](https://github.com/sevalla-hosting/mcp) for t
 {
   "mcpServers": {
     "sevalla": {
-      "type": "url",
       "url": "https://mcp.sevalla.com/mcp",
       "headers": {
         "Authorization": "Bearer <your-sevalla-api-key>"

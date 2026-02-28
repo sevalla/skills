@@ -24,13 +24,13 @@ if [[ -t 1 ]]; then
   GREEN=$'\033[0;32m'
   YELLOW=$'\033[0;33m'
   CYAN=$'\033[0;36m'
-  MAGENTA=$'\033[0;35m'
   WHITE=$'\033[1;37m'
   BOLD=$'\033[1m'
   DIM=$'\033[2m'
   RESET=$'\033[0m'
+  ORANGE=$'\033[38;2;250;114;22m'
 else
-  RED='' GREEN='' YELLOW='' CYAN='' MAGENTA='' WHITE='' BOLD='' DIM='' RESET=''
+  RED='' GREEN='' YELLOW='' CYAN='' WHITE='' BOLD='' DIM='' RESET='' ORANGE=''
 fi
 
 # ── Helpers ───────────────────────────────────────────────────────────────
@@ -42,12 +42,17 @@ err()     { printf "  %s✗%s %s\n" "$RED" "$RESET" "$1" >&2; }
 # ── Banner ────────────────────────────────────────────────────────────────
 
 printf "\n"
-printf "%s\n" "$MAGENTA"
-printf "   ╔═╗╔═╗╦  ╦╔═╗╦  ╦  ╔═╗\n"
-printf "   ╚═╗║╣ ╚╗╔╝╠═╣║  ║  ╠═╣\n"
-printf "   ╚═╝╚═╝ ╚╝ ╩ ╩╩═╝╩═╝╩ ╩\n"
-printf "%s\n" "$RESET"
-printf "   %sSkills Installer%s\n" "$DIM" "$RESET"
+printf "   %s▄▄██████████████████%s\n" "$ORANGE" "$RESET"
+printf "   %s██████████████████████%s\n" "$ORANGE" "$RESET"
+printf "   %s████████▀▀▀▀▀▀████████%s\n" "$ORANGE" "$RESET"
+printf "   %s██████▀▀▄▄▄▄▄▄▀▀██████%s\n" "$ORANGE" "$RESET"
+printf "   %s██████%s  %s▀▀████%s  %s██████%s   %sS E V A L L A%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET" "$ORANGE" "$RESET" "$WHITE" "$RESET"
+printf "   %s██████▄▄%s      %s▀▀██████%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+printf "   %s██████▀▀████▄▄%s  %s██████%s   %sSkills Installer%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET" "$DIM" "$RESET"
+printf "   %s██████▄▄▀▀▀▀▀▀▄▄██████%s\n" "$ORANGE" "$RESET"
+printf "   %s████████▄▄▄▄▄▄████████%s\n" "$ORANGE" "$RESET"
+printf "   %s██████████████████████%s\n" "$ORANGE" "$RESET"
+printf "   %s▀▀██████████████████▀▀%s\n" "$ORANGE" "$RESET"
 printf "\n"
 
 # ── Resolve source directory ──────────────────────────────────────────────
@@ -192,15 +197,14 @@ for i in "${!FOUND_NAMES[@]}"; do
 done
 
 printf "\n     Add this to %smcpServers%s:\n\n" "$BOLD" "$RESET"
-printf "     %s┌──────────────────────────────────────────────────┐%s\n" "$DIM" "$RESET"
-printf "     %s│%s  \"sevalla\": {                                    %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"type\": \"url\",                                %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",         %s│%s\n" "$DIM" "$RESET" "$CYAN" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"headers\": {                                  %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s      \"Authorization\": \"Bearer %s<api-key>%s\"         %s│%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    }                                             %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s  }                                               %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s└──────────────────────────────────────────────────┘%s\n" "$DIM" "$RESET"
+printf "     %s┌────────────────────────────────────────────────┐%s\n" "$DIM" "$RESET"
+printf "     %s│%s  \"sevalla\": {                                  %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",       %s│%s\n" "$DIM" "$RESET" "$CYAN" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    \"headers\": {                                %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s      \"Authorization\": \"Bearer %s<api-key>%s\"       %s│%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s    }                                           %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s│%s  }                                             %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
+printf "     %s└────────────────────────────────────────────────┘%s\n" "$DIM" "$RESET"
 printf "\n"
 printf "  %s2.%s Or just set an API key\n\n" "$CYAN" "$RESET"
 printf "     %sexport%s SEVALLA_API_KEY=%s<your-api-key>%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET"
