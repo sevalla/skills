@@ -10,12 +10,22 @@ Application stdout/stderr output. Use this to see application-level log messages
 
 ```js
 async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/runtime-logs" })
+  const res = await sevalla.request({
+    method: "GET",
+    path: "/applications/APP_ID/runtime-logs",
+    query: { from: "2026-03-01T00:00:00Z", to: "2026-03-02T00:00:00Z", limit: 500 }
+  })
   return res.body
 }
 ```
 
 Returns log entries with timestamps. Each entry includes the process name, log level, and message content.
+
+**Query parameters:**
+- `from` — ISO 8601 start time (default: 1 hour ago)
+- `to` — ISO 8601 end time (default: now)
+- `filters` — JSON-encoded array of filter objects with `key`, `operator`, `value`/`values`
+- `limit` — integer, default 1000, max 5000
 
 ## 2. Access Logs
 
@@ -25,12 +35,22 @@ HTTP request logs showing incoming traffic to the application. Each entry includ
 
 ```js
 async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/access-logs" })
+  const res = await sevalla.request({
+    method: "GET",
+    path: "/applications/APP_ID/access-logs",
+    query: { from: "2026-03-01T00:00:00Z", to: "2026-03-02T00:00:00Z", limit: 500 }
+  })
   return res.body
 }
 ```
 
 Use access logs to identify 4xx/5xx error patterns, slow endpoints, and traffic volume.
+
+**Query parameters:**
+- `from` — ISO 8601 start time (default: 1 hour ago)
+- `to` — ISO 8601 end time (default: now)
+- `filters` — JSON-encoded array of filter objects with `key`, `operator`, `value`/`values`
+- `limit` — integer, default 1000, max 5000
 
 ## 3. Deployment Logs
 
@@ -44,6 +64,12 @@ async () => {
   return res.body
 }
 ```
+
+**Query parameters:**
+- `from` — ISO 8601 start time (default: 1 hour ago)
+- `to` — ISO 8601 end time (default: now)
+- `filters` — JSON-encoded array of filter objects with `key`, `operator`, `value`/`values`
+- `limit` — integer, default 1000, max 5000
 
 To find the deployment ID, fetch the latest deployment first:
 
@@ -69,11 +95,20 @@ Eight metric endpoints provide traffic and performance data for applications.
 | GET /applications/{id}/metrics/top-countries | Traffic by country |
 | GET /applications/{id}/metrics/top-pages | Most visited pages |
 
+All metrics endpoints require `start` (ISO 8601), `end` (ISO 8601), and `interval_in_seconds` query parameters.
+
 ### Check request rate
 
 ```js
 async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/metrics/requests-per-minute" })
+  const now = new Date()
+  const start = new Date(now - 3600000).toISOString() // 1 hour ago
+  const end = now.toISOString()
+  const res = await sevalla.request({
+    method: "GET",
+    path: "/applications/APP_ID/metrics/requests-per-minute",
+    query: { start, end, interval_in_seconds: 300 }
+  })
   return res.body
 }
 ```
@@ -82,7 +117,14 @@ async () => {
 
 ```js
 async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/metrics/response-time-avg" })
+  const now = new Date()
+  const start = new Date(now - 3600000).toISOString() // 1 hour ago
+  const end = now.toISOString()
+  const res = await sevalla.request({
+    method: "GET",
+    path: "/applications/APP_ID/metrics/response-time-avg",
+    query: { start, end, interval_in_seconds: 300 }
+  })
   return res.body
 }
 ```
@@ -91,7 +133,14 @@ async () => {
 
 ```js
 async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/metrics/status-codes" })
+  const now = new Date()
+  const start = new Date(now - 3600000).toISOString() // 1 hour ago
+  const end = now.toISOString()
+  const res = await sevalla.request({
+    method: "GET",
+    path: "/applications/APP_ID/metrics/status-codes",
+    query: { start, end, interval_in_seconds: 300 }
+  })
   return res.body
 }
 ```
@@ -108,15 +157,21 @@ Per-process resource usage metrics. Requires both the application ID and the pro
 | GET /applications/{id}/processes/{process_id}/metrics/memory-limit | Memory limit |
 | GET /applications/{id}/processes/{process_id}/metrics/instance-count | Running instances |
 
+All metrics endpoints require `start` (ISO 8601), `end` (ISO 8601), and `interval_in_seconds` query parameters.
+
 ### Check CPU and memory together
 
 ```js
 async () => {
+  const now = new Date()
+  const start = new Date(now - 3600000).toISOString() // 1 hour ago
+  const end = now.toISOString()
+  const query = { start, end, interval_in_seconds: 300 }
   const [cpu, cpuLimit, mem, memLimit] = await Promise.all([
-    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/cpu-usage" }),
-    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/cpu-limit" }),
-    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/memory-usage" }),
-    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/memory-limit" })
+    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/cpu-usage", query }),
+    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/cpu-limit", query }),
+    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/memory-usage", query }),
+    sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/memory-limit", query })
   ])
   return { cpu: cpu.body, cpuLimit: cpuLimit.body, memory: mem.body, memoryLimit: memLimit.body }
 }
@@ -135,11 +190,17 @@ Resource usage metrics for managed database instances.
 | GET /databases/{id}/metrics/storage-usage | Storage used |
 | GET /databases/{id}/metrics/storage-limit | Storage limit |
 
+All metrics endpoints require `start` (ISO 8601), `end` (ISO 8601), and `interval_in_seconds` query parameters.
+
 ```js
 async () => {
+  const now = new Date()
+  const start = new Date(now - 3600000).toISOString() // 1 hour ago
+  const end = now.toISOString()
+  const query = { start, end, interval_in_seconds: 300 }
   const [storageUsed, storageLimit] = await Promise.all([
-    sevalla.request({ method: "GET", path: "/databases/DB_ID/metrics/storage-usage" }),
-    sevalla.request({ method: "GET", path: "/databases/DB_ID/metrics/storage-limit" })
+    sevalla.request({ method: "GET", path: "/databases/DB_ID/metrics/storage-usage", query }),
+    sevalla.request({ method: "GET", path: "/databases/DB_ID/metrics/storage-limit", query })
   ])
   return { storageUsed: storageUsed.body, storageLimit: storageLimit.body }
 }
@@ -214,17 +275,32 @@ async () => {
 }
 ```
 
-## 9. Web Terminal
+## 9. Database Password Reset
+
+Reset the admin password for a managed database. The new password is returned in the response.
+
+**POST /databases/{id}/reset-password**
+
+**Always confirm with the user before resetting.** Connected applications will need their environment variables updated with the new credentials.
+
+```js
+async () => {
+  const res = await sevalla.request({ method: "POST", path: "/databases/DB_ID/reset-password", body: {} })
+  return res.body
+}
+```
+
+## 10. Web Terminal
 
 Opens a WebSocket terminal session to a running process container.
 
 **GET /applications/{id}/processes/{process_id}/terminal**
 
-Supports `sh`, `bash`, and `zsh` shells. The terminal connects directly to the running container.
+Supports `sh`, `bash`, `dash`, `ksh`, `zsh`, `csh`, and `tcsh` shells. The terminal connects directly to the running container.
 
 **Important:** Files created outside persistent storage paths are lost on redeployment. Use persistent storage for any data that must survive deployments.
 
-## 10. Trigger Cron Job
+## 11. Trigger Cron Job
 
 Manually trigger a cron job process outside its regular schedule.
 
@@ -239,7 +315,7 @@ async () => {
 
 The process must be of type `cron`. This runs the job immediately as a one-off execution.
 
-## 11. Static Site Metrics
+## 12. Static Site Metrics
 
 Static sites support the same 8 metric endpoints as applications, under the `/static-sites/{id}/metrics/` path.
 
@@ -254,7 +330,24 @@ Static sites support the same 8 metric endpoints as applications, under the `/st
 | GET /static-sites/{id}/metrics/top-countries | Traffic by country |
 | GET /static-sites/{id}/metrics/top-pages | Most visited pages |
 
-## 12. Troubleshooting Triage
+## 13. Static Site Access Logs
+
+**GET /static-sites/{id}/access-logs**
+
+Supports the same query parameters as application access logs (`from`, `to`, `filters`, `limit`).
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "GET",
+    path: "/static-sites/SITE_ID/access-logs",
+    query: { from: "2026-03-01T00:00:00Z", to: "2026-03-02T00:00:00Z", limit: 500 }
+  })
+  return res.body
+}
+```
+
+## 14. Troubleshooting Triage
 
 ### Build failures
 

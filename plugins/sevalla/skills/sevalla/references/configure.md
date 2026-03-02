@@ -137,7 +137,7 @@ POST /applications/{id}/domains/{domain_id}/refresh-status
 
 ### Toggle System Domain
 
-Enable or disable the default `*.svl.app` system domain:
+Enable or disable the default `*.sevalla.app` system domain:
 
 ```
 POST /applications/{id}/domains/{domain_id}/toggle
@@ -254,6 +254,29 @@ Sevalla will add or remove instances to keep average CPU usage near the target p
 
 **Constraint**: Processes with persistent storage attached are limited to 1 instance. Horizontal scaling (manual or auto) is not available for these processes. Detach the persistent storage first if scaling is required.
 
+## Database Scaling
+
+Resize a database instance to increase CPU, memory, or storage.
+
+**PATCH /databases/{id}**
+
+| Field | Type | Description |
+|---|---|---|
+| `resource_type_id` | string | New database size (from GET /resources/database-resource-types) |
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "PATCH",
+    path: "/databases/DB_ID",
+    body: { resource_type_id: "NEW_SIZE_ID" }
+  })
+  return res.body
+}
+```
+
+Database sizes can only be increased, not decreased. Storage changes are permanent.
+
 ## Internal Networking
 
 Connect applications to databases over the private network within the same region. Internal connections use private IPs, incur no bandwidth charges, and have lower latency than public connections.
@@ -303,7 +326,7 @@ When external connections are enabled, the database becomes accessible via its `
 
 ## TCP Proxies
 
-Expose non-HTTP services to the internet. Use TCP proxies for protocols like WebSocket, MongoDB, RabbitMQ, or any custom TCP protocol.
+Expose non-HTTP services to the internet. Use TCP proxies for protocols like WebSocket, MQTT, RabbitMQ, or any custom TCP protocol.
 
 ```
 GET    /applications/{id}/tcp-proxies
@@ -378,6 +401,50 @@ POST /applications/{id}/purge-cache
 ```
 
 This purges both the application edge cache and the CDN cache in a single call.
+
+## Static Site Cache
+
+### Purge Static Site Cache
+
+```
+POST /static-sites/{id}/purge-cache
+```
+
+Clear the CDN cache for a static site. Propagation takes 2-5 minutes globally.
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "POST",
+    path: "/static-sites/STATIC_SITE_ID/purge-cache"
+  })
+  return res.body
+}
+```
+
+## Hibernation
+
+Auto-sleep idle applications to save costs. Hibernated apps wake automatically on the next incoming request (8-20 second cold start).
+
+Update via **PATCH** `/applications/{app_id}`:
+
+| Field | Type | Description |
+|---|---|---|
+| `hibernation_enabled` | boolean | Enable or disable auto-hibernation |
+| `hibernate_after_seconds` | integer | Seconds of inactivity before hibernating |
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "PATCH",
+    path: "/applications/APP_ID",
+    body: { hibernation_enabled: true, hibernate_after_seconds: 900 }
+  })
+  return res.body
+}
+```
+
+Hibernation is only available for applications with a single web process instance. Applications with horizontal scaling or persistent storage may not support hibernation.
 
 ## Health Checks
 
@@ -484,6 +551,28 @@ DELETE /applications/{id}/processes/{process_id}
 - `"afterSuccessDeployment"` — runs after a successful deployment.
 - `"afterFailedDeployment"` — runs after a failed deployment (for cleanup or notifications).
 
+## Application Settings
+
+Update general application properties via **PATCH** `/applications/{id}`:
+
+| Field | Type | Description |
+|---|---|---|
+| `display_name` | string | Application display name |
+| `protocol` | string | `"http"` (default) or `"grpc"` |
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "PATCH",
+    path: "/applications/APP_ID",
+    body: { display_name: "my-api", protocol: "http" }
+  })
+  return res.body
+}
+```
+
+Static sites and object storage also support **PATCH** for updating `display_name` and other resource-specific settings at their respective endpoints (`/static-sites/{id}`, `/object-storage/{id}`).
+
 ## Troubleshoot Configuration
 
 | Problem | Cause | Resolution |
@@ -494,3 +583,5 @@ DELETE /applications/{id}/processes/{process_id}
 | Env var not taking effect | Missing redeploy | Environment variable changes require a redeployment. Trigger a new deployment after updating env vars. |
 | Internal connection failing | Region mismatch | The application and database must be in the same data center region. Check both resources and migrate if needed. |
 | IP restriction blocking legitimate traffic | Incorrect CIDR range | Review the `ip_list` entries. Ensure CIDR notation covers all required source IPs. Disable temporarily with `is_enabled: false` to verify. |
+| App not hibernating | Multiple instances or persistent storage | Hibernation requires a single web process instance with no persistent storage. Reduce instances to 1 and detach storage. |
+| Database resize failing | Attempting to downsize | Database sizes can only be increased. Create a new database at the smaller size and migrate data if a downgrade is needed. |

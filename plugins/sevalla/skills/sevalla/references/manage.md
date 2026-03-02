@@ -102,7 +102,7 @@ Real-time HTTP notifications for platform events. Sevalla sends a POST request t
 | STATIC_SITE_DELETE | Static site deleted |
 | STATIC_SITE_DEPLOY | Static site deployment completed |
 
-**Roll secret** rotates the signing secret used to verify webhook deliveries. The old secret remains valid for a grace period so your receiver can accept payloads signed with either secret during the transition.
+**Roll secret** rotates the signing secret. Pass `transition_period_in_hours` (0-24) in the request body to set how long the old secret remains valid alongside the new one. Default is 0 (immediate rotation).
 
 ### Webhook deliveries
 
@@ -138,6 +138,7 @@ Route traffic across multiple application backends with configurable weights. Us
 | company_id | string | yes | Company identifier |
 | project_id | string | yes | Project identifier |
 | display_name | string | yes | Load balancer name |
+| type | string | no | `"DEFAULT"` (round-robin) or `"GEO"` (geographic routing). Defaults to `"DEFAULT"` |
 
 ### Destinations (backend apps)
 
@@ -154,8 +155,20 @@ Destinations define which applications receive traffic and how much.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| app_id | string | yes | Application to route traffic to |
-| weight | integer | yes | Relative traffic weight (higher = more traffic) |
+| destination_type | string | yes | `"APP"`, `"STATIC_SITE"`, `"OBJECT_STORAGE"`, `"EXTERNAL"`, or `"LOAD_BALANCER"` |
+| app_id | string | conditional | Application ID (when type is APP) |
+| static_site_id | string | conditional | Static site ID (when type is STATIC_SITE) |
+| object_storage_id | string | conditional | Bucket ID (when type is OBJECT_STORAGE) |
+| load_balancer_id | string | conditional | Load balancer ID (when type is LOAD_BALANCER, for nested routing) |
+| external_url | string | conditional | External URL (when type is EXTERNAL) |
+| weight | integer | yes | Relative traffic weight |
+
+For GEO load balancers, destinations also support:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| latitude | number | conditional | Geographic latitude (for GEO type) |
+| longitude | number | conditional | Geographic longitude (for GEO type) |
 
 ### Domains
 
@@ -266,6 +279,7 @@ Configure cross-origin resource sharing for browser-based access to bucket conte
 
 | Action | Method | Path |
 |---|---|---|
+| List | **GET** | `/object-storage/{id}/cors-policies` |
 | Create | **POST** | `/object-storage/{id}/cors-policies` |
 | Update | **PATCH** | `/object-storage/{id}/cors-policies/{policy_id}` |
 | Delete | **DELETE** | `/object-storage/{id}/cors-policies/{policy_id}` |
@@ -296,6 +310,15 @@ Browse and manage objects stored in a bucket.
 |---|---|---|
 | List objects | **GET** | `/object-storage/{id}/objects` |
 | Bulk delete | **DELETE** | `/object-storage/{id}/objects` |
+
+Query parameters for listing objects:
+
+| Param | Type | Description |
+|---|---|---|
+| `prefix` | string | Filter by key prefix (e.g. `"images/"`) |
+| `delimiter` | string | Grouping character, typically `"/"` for directory-like listing |
+| `cursor` | string | Continuation token for pagination |
+| `limit` | integer | Max results per page (default 200) |
 
 **Bulk delete** body: `{ "keys": ["file1.png", "dir/file2.pdf"] }`
 

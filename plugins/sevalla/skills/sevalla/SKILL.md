@@ -157,11 +157,11 @@ async () => {
 }
 ```
 
-### 8. Get Available Regions
+### 8. List Static Sites
 
 ```js
 async () => {
-  const res = await sevalla.request({ method: "GET", path: "/resources/clusters" })
+  const res = await sevalla.request({ method: "GET", path: "/static-sites", query: { limit: 100 } })
   return res.body
 }
 ```
