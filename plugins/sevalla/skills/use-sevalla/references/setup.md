@@ -53,7 +53,7 @@ All list endpoints support `limit` (max 100) and `offset` query parameters for p
 
 ## 2. Create Project
 
-Projects group related services within a company. Create a project before provisioning applications, databases, or other resources.
+Projects are an optional way to group related resources within a company. You do not need to create a project before provisioning resources — applications, databases, static sites, and storage buckets can all be created directly under a company.
 
 **POST /projects**
 
@@ -89,7 +89,7 @@ Applications deploy from three source types: private Git repositories, public Gi
 | Field | Type | Required | Description |
 |---|---|---|---|
 | company_id | string | yes | Company identifier |
-| project_id | string | yes | Project identifier |
+| project_id | string | no | Project identifier (optional — omit to create without a project) |
 | display_name | string | yes | Application name |
 | cluster_id | string | yes | Target data center (see section 9) |
 | source | string | yes | `"privateGit"`, `"publicGit"`, or `"dockerImage"` |
@@ -204,7 +204,7 @@ async () => {
 | Field | Type | Required | Description |
 |---|---|---|---|
 | company_id | string | yes | Company identifier |
-| project_id | string | yes | Project identifier |
+| project_id | string | no | Project identifier (optional — omit to create without a project) |
 | display_name | string | yes | Database name |
 | type | string | yes | Engine name (e.g. `"postgresql"`, `"mysql"`, `"mariadb"`, `"redis"`, `"valkey"`) |
 | version | string | yes | Engine version (e.g. `"17"`, `"8.0"`) |
@@ -256,7 +256,7 @@ Static sites are built from Git repositories and served globally via Cloudflare 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | company_id | string | yes | Company identifier |
-| project_id | string | yes | Project identifier |
+| project_id | string | no | Project identifier (optional — omit to create without a project) |
 | display_name | string | yes | Site name |
 | source | string | yes | `"privateGit"` or `"publicGit"` |
 | git_type | string | conditional | Required for privateGit: `"github"`, `"bitbucket"`, or `"gitlab"` |
@@ -299,7 +299,7 @@ S3-compatible object storage powered by Cloudflare R2. Pricing: $0.02/GB stored 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | company_id | string | yes | Company identifier |
-| project_id | string | yes | Project identifier |
+| project_id | string | no | Project identifier (optional — omit to create without a project) |
 | display_name | string | yes | Bucket name |
 | location | string | yes | Storage region hint |
 | jurisdiction | string | no | Data sovereignty jurisdiction |
@@ -465,7 +465,7 @@ docker build --platform linux/amd64 -t myapp:latest .
 
 ### Missing required fields
 
-All create operations require `company_id` and `project_id`. If you receive a 400 error about missing fields, verify both are included in the request body.
+All create operations require `company_id`. The `project_id` field is optional — omit it to create resources without a project. If you receive a 400 error about missing fields, verify `company_id` is included in the request body.
 
 ### After creating any resource
 

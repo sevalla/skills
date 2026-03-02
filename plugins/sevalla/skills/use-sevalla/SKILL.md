@@ -19,7 +19,7 @@ allowed-tools: Bash(sevalla-api.sh:*), Bash(curl:*), Bash(which:*), Bash(jq:*)
 Sevalla organizes infrastructure in a strict hierarchy:
 
 - **Company** — Top-level organizational unit. A user can belong to multiple companies. Every resource lives under a company.
-- **Project** — Groups related services within a company. Use projects to separate environments (production, staging) or logical units (frontend, backend).
+- **Project** — Optional grouping of related services within a company. Projects are not required — resources can be created directly under a company without a project.
 - **Application** — A containerized web app deployed from a Git repository (GitHub, GitLab, or Bitbucket) or a Docker image. Runs on Kubernetes pods. Each application contains one or more **processes**: `web` (HTTP traffic), `worker` (background jobs), `cron` (scheduled tasks), or `job` (one-off runs).
 - **Database** — A managed database instance. Supported engines: PostgreSQL, MySQL, MariaDB, Redis, and Valkey. Databases can be connected to applications via internal networking.
 - **Static Site** — An HTML/CSS/JS site built from a Git repository and served globally via the Cloudflare CDN (260+ edge locations). Free tier available.
@@ -183,7 +183,7 @@ Common multi-step workflows. Follow the steps in order, loading the referenced f
 
 ### First Deploy
 
-1. Create a project (`references/setup.md`)
+1. Optionally create a project to group services (`references/setup.md`)
 2. Create an application from a Git repository (`references/setup.md`)
 3. Set environment variables (`references/configure.md`)
 4. Trigger the initial deployment (`references/deploy.md`)
