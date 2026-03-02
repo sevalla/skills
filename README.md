@@ -115,7 +115,7 @@ The skill uses **progressive disclosure** — only 1-2 reference files load per 
 
 ```
 plugins/sevalla/
-├── skills/use-sevalla/
+├── skills/sevalla/
 │   ├── SKILL.md              # Routing skill (loaded on activation)
 │   ├── references/
 │   │   ├── setup.md          # Projects, apps, databases, static sites, storage

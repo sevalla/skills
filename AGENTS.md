@@ -12,7 +12,7 @@ plugins/sevalla/
   hooks/
     hooks.json              # Hook definitions for auto-approval
     auto-approve-mcp.sh     # PreToolUse hook: auto-approves Sevalla API calls
-  skills/use-sevalla/
+  skills/sevalla/
     SKILL.md                # Main routing skill (entry point for all Sevalla operations)
     references/
       setup.md              # Create projects, provision apps/databases/static sites/storage

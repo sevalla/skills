@@ -76,13 +76,13 @@ resolve_source_dir() {
   if [[ -n "$script_dir" ]]; then
     local repo_root
     repo_root="$(cd "$script_dir/.." && pwd)"
-    if [[ -f "$repo_root/plugins/sevalla/skills/use-sevalla/SKILL.md" ]]; then
+    if [[ -f "$repo_root/plugins/sevalla/skills/sevalla/SKILL.md" ]]; then
       SOURCE_DIR="$repo_root"
       return
     fi
   fi
 
-  if [[ -f "./plugins/sevalla/skills/use-sevalla/SKILL.md" ]]; then
+  if [[ -f "./plugins/sevalla/skills/sevalla/SKILL.md" ]]; then
     SOURCE_DIR="$(pwd)"
     return
   fi
@@ -102,7 +102,7 @@ resolve_source_dir() {
 
 resolve_source_dir
 
-SKILL_SRC="$SOURCE_DIR/plugins/sevalla/skills/use-sevalla"
+SKILL_SRC="$SOURCE_DIR/plugins/sevalla/skills/sevalla"
 HOOKS_SRC="$SOURCE_DIR/plugins/sevalla/hooks"
 
 # ── Detect AI tools ──────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ for i in "${!FOUND_NAMES[@]}"; do
   dir="${FOUND_DIRS[$i]}"
   hooks="${FOUND_HOOKS[$i]}"
 
-  dest="$dir/skills/use-sevalla"
+  dest="$dir/skills/sevalla"
   mkdir -p "$dest"
   cp -R "$SKILL_SRC/"* "$dest/"
 
@@ -197,14 +197,12 @@ for i in "${!FOUND_NAMES[@]}"; do
 done
 
 printf "\n     Add this to %smcpServers%s:\n\n" "$BOLD" "$RESET"
-printf "     %s┌────────────────────────────────────────────────┐%s\n" "$DIM" "$RESET"
-printf "     %s│%s  \"sevalla\": {                                  %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",       %s│%s\n" "$DIM" "$RESET" "$CYAN" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    \"headers\": {                                %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s      \"Authorization\": \"Bearer %s<api-key>%s\"       %s│%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s    }                                           %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s│%s  }                                             %s│%s\n" "$DIM" "$RESET" "$DIM" "$RESET"
-printf "     %s└────────────────────────────────────────────────┘%s\n" "$DIM" "$RESET"
+printf "     \"sevalla\": {\n"
+printf "       \"url\": \"%shttps://mcp.sevalla.com/mcp%s\",\n" "$CYAN" "$RESET"
+printf "       \"headers\": {\n"
+printf "         \"Authorization\": \"Bearer %s<api-key>%s\"\n" "$YELLOW" "$RESET"
+printf "       }\n"
+printf "     }\n"
 printf "\n"
 printf "  %s2.%s Or just set an API key\n\n" "$CYAN" "$RESET"
 printf "     %sexport%s SEVALLA_API_KEY=%s<your-api-key>%s\n" "$DIM" "$RESET" "$YELLOW" "$RESET"

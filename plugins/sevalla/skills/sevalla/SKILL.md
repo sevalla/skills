@@ -1,5 +1,5 @@
 ---
-name: use-sevalla
+name: sevalla
 description: >
   Operate Sevalla cloud infrastructure: create projects, provision applications
   and databases, deploy code, manage static sites and object storage, configure
@@ -9,7 +9,7 @@ description: >
   databases, static sites, object storage, domains, environment variables,
   scaling, logs, metrics, pipelines, backups, or cloud infrastructure
   operations, even if they don't say "Sevalla" explicitly.
-allowed-tools: Bash(sevalla-api.sh:*), Bash(curl:*), Bash(which:*), Bash(jq:*)
+allowed-tools: mcp__sevalla__*, Bash(sevalla-api.sh:*), Bash(curl:*), Bash(which:*), Bash(jq:*)
 ---
 
 # Sevalla Infrastructure Skill
@@ -32,12 +32,22 @@ The API base URL is `https://api.sevalla.com/v3`. Authentication uses Bearer tok
 
 ## Interacting with Sevalla
 
-### Primary: MCP Tools
+### Step 1: Detect Available Tools
 
-If `search` and `execute` MCP tools are available (from the Sevalla MCP server at `mcp.sevalla.com/mcp`), always use them.
+Before making any API call, determine which interface to use:
 
-- **`search` tool** — Write JavaScript to explore the OpenAPI specification. The `spec` global contains the full resolved API spec. Use it to discover endpoints, parameters, request/response schemas, and required fields before making calls.
-- **`execute` tool** — Write JavaScript to call API endpoints. The `sevalla` global provides `sevalla.request({ method, path, query, body })` which handles authentication, base URL, and response parsing automatically.
+1. Check if `mcp__sevalla__search` and `mcp__sevalla__execute` tools are available in your current tool set.
+2. **If MCP tools are available** → Use them. They handle auth, base URL, and response parsing automatically. Skip to "Using MCP Tools" below.
+3. **If MCP tools are NOT available** → Fall back to `sevalla-api.sh`. Tell the user: *"Sevalla MCP server isn't connected. Using REST API fallback. Check your MCP server configuration to enable the primary interface."*
+
+**Never skip this detection step.** Do not jump to the shell script without first confirming MCP tools are absent.
+
+### Using MCP Tools (Primary)
+
+The Sevalla MCP server (`mcp.sevalla.com/mcp`) provides two tools:
+
+- **`mcp__sevalla__search`** — Write JavaScript to explore the OpenAPI specification. The `spec` global contains the full resolved API spec. Use it to discover endpoints, parameters, request/response schemas, and required fields before making calls.
+- **`mcp__sevalla__execute`** — Write JavaScript to call API endpoints. The `sevalla` global provides `sevalla.request({ method, path, query, body })` which handles authentication, base URL, and response parsing automatically.
 
 Example `search` usage to discover endpoints for a resource:
 
@@ -55,15 +65,18 @@ async () => {
 }
 ```
 
-### Fallback: sevalla-api.sh
+### Using sevalla-api.sh (Fallback)
 
-If MCP tools are unavailable, use the shell helper script:
+Only use this when MCP tools are confirmed unavailable. Useful for terminal/CI usage outside Claude Code.
 
 ```bash
 ./sevalla-api.sh METHOD PATH [BODY]
 ```
 
-Requires the `SEVALLA_API_KEY` environment variable to be set. The script automatically adds the Bearer token, sets JSON content headers, and pretty-prints responses with `jq` when available.
+The script auto-discovers the API key in this order:
+1. `SEVALLA_API_KEY` environment variable
+2. MCP config files in the current or parent directories (`.mcp.json`, `.cursor/mcp.json`, `codex.json`, `.opencode/config.json`)
+3. Global config files (`~/.claude.json`)
 
 Examples:
 ```bash
@@ -73,7 +86,7 @@ Examples:
 
 ## Quick Operations
 
-The eight most common operations with ready-to-use MCP `execute` snippets.
+The eight most common operations. Use these snippets with the `mcp__sevalla__execute` tool. If using the shell fallback, translate to: `./sevalla-api.sh METHOD PATH [BODY]`.
 
 ### 1. List Applications
 
@@ -169,8 +182,8 @@ When the user's request goes beyond the quick operations above, load the appropr
 
 ## Execution Rules
 
-1. **MCP-first** — Always prefer the `search` and `execute` MCP tools over the shell fallback. Only use `sevalla-api.sh` when MCP tools are confirmed unavailable.
-2. **Search before execute** — Use the `search` tool to discover endpoint details (path parameters, query parameters, request body schemas, required fields) before calling `execute`. Do not guess at parameters.
+1. **Detect first** — Run the detection step from "Interacting with Sevalla" before every request. Use MCP tools (`mcp__sevalla__search`, `mcp__sevalla__execute`) when available. Only fall back to `sevalla-api.sh` when MCP tools are confirmed absent from the tool set.
+2. **Search before execute** — When using MCP, use the `mcp__sevalla__search` tool to discover endpoint details (path parameters, query parameters, request body schemas, required fields) before calling `mcp__sevalla__execute`. Do not guess at parameters.
 3. **Confirm destructive actions** — Always ask the user for explicit confirmation before deleting resources, suspending applications, restoring backups, or rolling back deployments. State exactly what will happen.
 4. **Verify after mutation** — After any create, update, or delete operation, re-read the resource to confirm the change took effect. Report the verified state to the user.
 5. **Pagination** — List endpoints default to 25 items per page (maximum 100). Use `limit` and `offset` query parameters to paginate through larger result sets.
