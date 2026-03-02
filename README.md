@@ -49,14 +49,13 @@ Pair with the [Sevalla MCP Server](https://github.com/sevalla-hosting/mcp) for t
 {
   "mcpServers": {
     "sevalla": {
-      "url": "https://mcp.sevalla.com/mcp",
-      "headers": {
-        "Authorization": "Bearer <your-sevalla-api-key>"
-      }
+      "url": "https://mcp.sevalla.com/mcp"
     }
   }
 }
 ```
+
+Authentication is handled via OAuth — you'll be prompted to authorize through Sevalla on first connection.
 
 ### Option 2: API Key Only
 
