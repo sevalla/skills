@@ -1,9 +1,16 @@
 {
-  "hooks": [
-    {
-      "matcher": "Bash",
-      "event": "PreToolUse",
-      "command": "bash plugins/sevalla/hooks/auto-approve-mcp.sh \"$TOOL_INPUT\""
-    }
-  ]
+  "description": "Auto-approve safe Sevalla API calls (sevalla-api.sh and curl to api.sevalla.com).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/auto-approve-mcp.sh"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -1,17 +1,17 @@
-# Deploy — Sevalla Deployment & Release Management
+# Deploy — Deployments, Builds, Pipelines, Preview Apps
 
-## 1. Trigger Deployment
+## 1. Trigger an Application Deployment
 
-**POST** `/applications/{app_id}/deployments`
+**POST /applications/{id}/deployments**
 
 | Body | Behavior |
 |---|---|
-| `{ "branch": "main" }` | Deploy latest commit from a specific branch |
-| `{ "docker_image": "registry/image:tag" }` | Deploy a Docker image from an external registry |
-| `{}` | Restart latest deployment (skips build, reuses last image) |
+| `{ "branch": "main" }` | Build & deploy the latest commit from the given branch (Git apps) |
+| `{ "docker_image": "registry/image:tag" }` | Deploy a Docker image (Docker apps) |
+| `{ "is_restart": true }` | Reuse the last successful build artifact (skip build) — fastest way to pick up new env vars |
+| `{}` | Use the configured `default_branch` / `docker_image` |
 
-**Statuses:** `waiting` | `inProgress` | `success` | `failed` | `cancelled` | `skipped`
-**Triggers:** `MANUAL_DEPLOY` | `AUTO_DEPLOY` | `ROLLBACK_DEPLOYMENT`
+**Statuses:** `waiting` → `inProgress` → `success` \| `failed` \| `cancelled` \| `skipped`.
 
 ```js
 async () => {
@@ -24,76 +24,52 @@ async () => {
 }
 ```
 
-After triggering, check status with GET `/applications/{app_id}/deployments?limit=1`.
+After triggering, poll status with `GET /applications/{id}/deployments?limit=1`.
 
----
+## 2. Cancel a Deployment
 
-## 2. Cancel Deployment
+**POST /applications/{id}/deployments/{deployment_id}/cancel** — cancels a `waiting` or `inProgress` deployment. No body.
 
-**POST** `/applications/{app_id}/deployments/{deployment_id}/cancel`
+**Confirm with the user before cancelling.**
 
-Cancels a deployment in `waiting` or `inProgress` status. No body required.
+## 3. Roll Back
 
-**Always confirm with the user before cancelling.**
-
----
-
-## 3. Rollback
-
-**POST** `/applications/{app_id}/deployments/rollback`
-
-Rolls back to the last successful deployment. No body required. Redeploys the previous successful build image without rebuilding.
+**POST /applications/{id}/deployments/rollback** — redeploys the previous successful build image; no rebuild.
 
 ```js
-async () => {
-  const res = await sevalla.request({
-    method: "POST",
-    path: "/applications/APP_ID/deployments/rollback"
-  })
-  return res.body
-}
+async () => (await sevalla.request({
+  method: "POST",
+  path: "/applications/APP_ID/deployments/rollback"
+})).body
 ```
 
-**Always confirm with the user before rolling back.** State clearly that this reverts the running application to its previous successful deployment.
+**Confirm with the user before rolling back.** State exactly which deployment will become active again.
 
----
+## 4. List & Inspect Deployments
 
-## 4. List Deployments
+| Action | Method | Path |
+|---|---|---|
+| List | GET | `/applications/{id}/deployments` (paginated) |
+| Get | GET | `/applications/{id}/deployments/{deployment_id}` |
+| Build logs | GET | `/applications/{id}/deployments/{deployment_id}/logs` |
 
-**GET** `/applications/{app_id}/deployments` — paginated (`limit`, `offset`).
+Deployment objects include `id`, `status`, `branch`, `commit_sha`, `commit_author`, `trigger`, `created_at`, `started_at`, `finished_at`, and a `steps` array (clone → build → push → deploy). For runtime logs, see `references/operate.md`.
 
-Returns deployment history: `id`, `status`, `branch`, `commit_sha`, `commit_author`, `trigger`, `created_at`, `started_at`, `finished_at`.
+## 5. Build Configuration
 
-## 5. Get Deployment Details
-
-**GET** `/applications/{app_id}/deployments/{deployment_id}` — full deployment info including a `steps` array (clone, build, push, deploy) with individual statuses and durations.
-
-## 6. View Deployment Logs
-
-**GET** `/applications/{app_id}/deployments/{deployment_id}/logs` — build logs from each step. Use to diagnose build failures. For runtime logs, see `references/operate.md`.
-
----
-
-## 7. Build Configuration
-
-Update via **PATCH** `/applications/{app_id}`:
+All build settings are managed via **PATCH /applications/{id}** — they cannot be set on create.
 
 | Field | Description |
 |---|---|
-| `build_type` | `"nixpacks"` (default), `"dockerfile"`, or `"pack"` |
-| `build_path` | Root directory for the build (relative to repo root) |
-| `dockerfile_path` | Path to Dockerfile (when `build_type` is `"dockerfile"`) |
-| `docker_context` | Docker build context path |
-| `pack_builder` | Buildpack builder URL (when `build_type` is `"pack"`) |
-| `buildpacks` | Array of buildpack URLs (primary language buildpack must be last) |
-| `nixpacks_version` | Pin a specific Nixpacks version |
-| `build_cache_enabled` | Boolean — enable/disable build cache |
-
-**Nixpacks** (default): Auto-detects language. Supports 20+ languages. Configurable via `nixpacks.toml` in repo root.
-
-**Dockerfile**: Full control. Required for unsupported languages. Images must be `linux/amd64`.
-
-**Buildpacks**: Heroku-style. Supports Node.js, Ruby, Python, Java, Scala, PHP, Go.
+| `build_type` | `"nixpacks"` (default), `"dockerfile"`, `"pack"` |
+| `build_path` | Repo-relative build directory |
+| `dockerfile_path` | Path to Dockerfile (for `dockerfile`) |
+| `docker_context` | Docker build context (for `dockerfile`) |
+| `pack_builder` | `"heroku/builder:22"` or `"heroku/builder:24"` (for `pack`) |
+| `buildpacks` | Array of `{ order, source }` (for `pack`); primary language buildpack has the highest `order` |
+| `nixpacks_version` | One of `"1.29"`, `"1.39"`, `"1.41"` |
+| `build_cache_enabled` | Boolean |
+| `docker_registry_credential_id` | UUID — required for private base images or for `dockerImage` source |
 
 ```js
 async () => {
@@ -110,19 +86,16 @@ async () => {
 }
 ```
 
----
+## 6. Auto-Deploy Settings
 
-## 8. Auto-Deploy Settings
-
-Update via **PATCH** `/applications/{app_id}`:
+Also via **PATCH /applications/{id}**.
 
 | Field | Type | Description |
 |---|---|---|
-| `auto_deploy` | boolean | Deploy on every commit to the default branch |
+| `auto_deploy` | boolean | Deploy on push to `default_branch`. **Only works for `privateGit` apps.** |
 | `default_branch` | string | Branch that triggers auto-deploy |
-| `wait_for_checks` | boolean | Wait for CI checks before deploying |
-| `allow_deploy_paths` | string[] | Only deploy when these paths change |
-| `ignore_deploy_paths` | string[] | Skip deploy when only these paths change |
+| `allow_deploy_paths` | string[] | Glob patterns — only commits touching these trigger deploys |
+| `ignore_deploy_paths` | string[] | Glob patterns — commits touching only these are skipped |
 
 `allow_deploy_paths` and `ignore_deploy_paths` are mutually exclusive.
 
@@ -134,112 +107,133 @@ async () => {
     body: {
       auto_deploy: true,
       default_branch: "main",
-      wait_for_checks: true,
-      ignore_deploy_paths: ["docs/", "README.md"]
+      ignore_deploy_paths: ["docs/**", "README.md"]
     }
   })
   return res.body
 }
 ```
 
----
+## 7. Deployment Hooks
 
-## 9. Deployment Hooks
-
-External trigger URLs for CI/CD integration.
+External URLs that trigger a deploy when called. Useful for CI/CD bridges.
 
 | Action | Method | Path |
 |---|---|---|
-| Enable | **POST** | `/applications/{app_id}/deployment-hook` |
-| Get URL | **GET** | `/applications/{app_id}/deployment-hook` |
-| Regenerate | **PUT** | `/applications/{app_id}/deployment-hook` |
-| Disable | **DELETE** | `/applications/{app_id}/deployment-hook` |
+| Enable | POST | `/applications/{id}/deployment-hook` |
+| Get URL | GET | `/applications/{id}/deployment-hook` |
+| Regenerate | PUT | `/applications/{id}/deployment-hook` |
+| Disable | DELETE | `/applications/{id}/deployment-hook` |
 
-The response from POST/GET includes the hook URL. Add it as a webhook in your CI/CD system to trigger deployments on successful builds.
+Calling the returned URL from CI triggers a fresh deploy.
 
----
+## 8. Pipelines
 
-## 10. Pipelines
+Pipelines move code through stages (dev → staging → prod).
 
-Pipelines move code through stages (dev -> staging -> production).
+| Type | Behavior |
+|---|---|
+| `trunk` | Same repo + branch; promote the build image between stages without rebuilding |
+| `branch` | Each stage has its own branch |
 
-**Types:**
-- **trunk** — Same repo, promote between stages without rebuilding
-- **branch** — Different branches per stage
-
-| Action | Method | Path |
-|---|---|---|
-| Create | **POST** | `/pipelines` |
-| List | **GET** | `/pipelines` |
-| Add stage | **POST** | `/pipelines/{id}/stages` |
-| Add app to stage | **POST** | `/pipelines/{id}/stages/{stage_id}/apps` |
-| Promote | **POST** | `/pipelines/{id}/promote` |
-
-Create a pipeline:
+| Action | Method | Path | Body |
+|---|---|---|---|
+| Create pipeline | POST | `/pipelines` | `{ display_name, type, project_id? }` |
+| Add stage | POST | `/pipelines/{id}/stages` | `{ display_name, insert_before, branch? }` |
+| Update stage | PATCH | `/pipelines/{id}/stages/{stage_id}` | `{ display_name?, branch? }` |
+| Delete stage | DELETE | `/pipelines/{id}/stages/{stage_id}` | — |
+| Add app to stage | POST | `/pipelines/{id}/stages/{stage_id}/apps` | `{ app_id }` |
+| Remove app from stage | DELETE | `/pipelines/{id}/stages/{stage_id}/apps/{app_id}` | — |
+| Promote | POST | `/pipelines/{id}/promote` | optional `{ from_stage_id, to_stage_id }` |
+| Delete pipeline | DELETE | `/pipelines/{id}` | — |
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/pipelines",
-    body: { display_name: "My Pipeline", type: "trunk" }
+    body: { display_name: "Web Release Pipeline", type: "trunk" }
   })
   return res.body
 }
 ```
 
-Promote to next stage (moves the exact build image without rebuilding):
+Add a stage at a specific position (0-indexed; existing stages shift up):
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
-    path: "/pipelines/PIPELINE_ID/promote"
+    path: "/pipelines/PIPELINE_ID/stages",
+    body: { display_name: "Staging", insert_before: 1 }
   })
   return res.body
 }
 ```
 
-When adding a stage, `position` determines order (0-indexed). When adding an app to a stage, provide the `app_id`.
+Promote (moves the build image to the next stage — no rebuild):
 
----
+```js
+async () => (await sevalla.request({
+  method: "POST",
+  path: "/pipelines/PIPELINE_ID/promote"
+})).body
+```
 
-## 11. Preview Apps
+## 9. Preview Apps
 
-Automatically created for pull requests. Inherit env vars and config from the pipeline's first stage. Deleted when the PR is closed or merged.
+Auto-created for pull requests. Inherit env vars and config from the pipeline's first stage. Deleted when the PR closes or merges.
+
+| Action | Method | Path | Body |
+|---|---|---|---|
+| Enable | POST | `/pipelines/{id}/preview/enable` | `{ repo_url?, auto_create_app?, delete_stale_apps?, stale_app_days? }` |
+| Disable | POST | `/pipelines/{id}/preview/disable` | — |
+| Update | PUT | `/pipelines/{id}/preview` | same fields as enable |
+
+```js
+async () => {
+  const res = await sevalla.request({
+    method: "POST",
+    path: "/pipelines/PIPELINE_ID/preview/enable",
+    body: {
+      repo_url: "https://github.com/org/repo",
+      auto_create_app: true,
+      delete_stale_apps: true,
+      stale_app_days: 7
+    }
+  })
+  return res.body
+}
+```
+
+## 10. Static Site Deployments
+
+**POST /static-sites/{id}/deployments** — body is optional.
+
+| Body | Behavior |
+|---|---|
+| `{}` | Deploy the latest commit on `default_branch` |
+| `{ "branch": "feature/x" }` | Deploy a specific branch |
+| `{ "deployment_id": "<uuid>" }` | Roll back to that prior deployment (no rebuild) |
+
+Other endpoints follow the application pattern:
 
 | Action | Method | Path |
 |---|---|---|
-| Enable | **POST** | `/pipelines/{id}/preview/enable` |
-| Disable | **POST** | `/pipelines/{id}/preview/disable` |
-| Update settings | **PUT** | `/pipelines/{id}/preview` |
+| List | GET | `/static-sites/{id}/deployments` |
+| Get | GET | `/static-sites/{id}/deployments/{deployment_id}` |
+| Cancel | POST | `/static-sites/{id}/deployments/{deployment_id}/cancel` |
+| Build logs | GET | `/static-sites/{id}/deployments/{deployment_id}/logs` |
 
----
+Static sites do **not** have a separate `/rollback` endpoint — use the `deployment_id` body field above.
 
-## 12. Static Site Deployments
+## 11. Troubleshooting
 
-**POST** `/static-sites/{static_site_id}/deployments`
-
-Triggers build and deploy for a static site served via the Cloudflare CDN.
-
-```js
-async () => {
-  const res = await sevalla.request({
-    method: "POST",
-    path: "/static-sites/STATIC_SITE_ID/deployments"
-  })
-  return res.body
-}
-```
-
----
-
-## 13. Troubleshoot Deployments
-
-**Build fails:** Check deployment logs (section 6). Common causes: missing dependencies, wrong Node/Python version, Dockerfile syntax errors, misconfigured `build_path`.
-
-**Deployment stuck in "waiting":** Another deployment may be in progress. Only one deployment runs at a time per application. Cancel it (section 2) or wait.
-
-**Runtime crash after deploy:** Build succeeded but app crashes at startup. Check runtime logs (`references/operate.md`). Common causes: missing env vars, port binding issues (must listen on `PORT`), database connection failures. Consider rolling back (section 3) while investigating.
-
-**Auto-deploy not triggering:** Verify `auto_deploy` is true, commits target the correct `default_branch`, Git provider webhook is active, path rules match changed files, and CI checks pass if `wait_for_checks` is enabled.
+| Symptom | Likely cause | Action |
+|---|---|---|
+| Build fails | Missing dep, wrong runtime version, Dockerfile syntax, wrong `build_path` | Read deployment logs (`/deployments/{deployment_id}/logs`); fix and redeploy |
+| Stuck in `waiting` | Another deployment already running | Only one deployment runs at a time per app — cancel it or wait |
+| Build succeeds, app crashes | Missing env var, wrong PORT binding, DB unreachable | Check runtime logs (`references/operate.md`); consider rolling back while investigating |
+| Auto-deploy not firing | App is not `privateGit`, branch mismatch, path filter excludes commits, Git webhook revoked | Verify `auto_deploy: true`, `default_branch`, deploy-path filters, and that Sevalla has webhook access on the repo |
+| `is_restart` ignored | No prior successful build artifact | Trigger a normal deploy first; `is_restart` reuses the last successful image |
+| Rollback returns 4xx | No previous successful deployment | Confirm at least one prior successful deploy exists |

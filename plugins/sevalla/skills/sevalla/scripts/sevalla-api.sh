@@ -10,8 +10,11 @@
 #
 # Examples:
 #   ./sevalla-api.sh GET /applications
-#   ./sevalla-api.sh POST /applications '{"display_name":"my-app","company_id":"xxx"}'
+#   ./sevalla-api.sh POST /applications '{"display_name":"my-app","cluster_id":"<uuid>","source":"privateGit","git_type":"github","repo_url":"https://github.com/org/repo"}'
 #   ./sevalla-api.sh DELETE /applications/app-id
+#
+# Note: company_id is NEVER passed in the request body — it is inferred from
+# the API key.
 #
 # Authentication (checked in order):
 #   1. SEVALLA_API_KEY environment variable
@@ -41,7 +44,7 @@ Authentication (checked in order):
 
 Examples:
   ./sevalla-api.sh GET /applications
-  ./sevalla-api.sh POST /applications '{"display_name":"my-app","company_id":"xxx"}'
+  ./sevalla-api.sh POST /applications '{"display_name":"my-app","cluster_id":"<uuid>","source":"privateGit","git_type":"github","repo_url":"https://github.com/org/repo"}'
   ./sevalla-api.sh DELETE /applications/app-id
 USAGE
 }

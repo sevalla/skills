@@ -1,70 +1,38 @@
-# Configure — Environment, Domains, Scaling, Networking
+# Configure — Env Vars, Domains, Scaling, Networking, Processes
 
-Reference for changing configuration on Sevalla-hosted resources. Covers environment variables, custom domains, scaling, internal networking, TCP proxies, private ports, IP restrictions, CDN, health checks, and processes.
+Reference for changing configuration on running resources. Env var changes do **not** take effect until the app is redeployed — use `is_restart: true` for fast pickup (`references/deploy.md`).
 
-## Environment Variables
+## 1. Application Environment Variables
 
-Application-scoped environment variables control runtime and build behavior.
-
-### List Environment Variables
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/env-vars" })
-  return res.body
-}
-```
-
-### Create an Environment Variable
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/applications/{id}/env-vars` | — |
+| Create | POST | `/applications/{id}/env-vars` | `{ key, value, is_runtime?, is_buildtime? }` |
+| Update | PUT | `/applications/{id}/env-vars/{env_var_id}` | `{ key?, value?, is_runtime?, is_buildtime? }` |
+| Delete | DELETE | `/applications/{id}/env-vars/{env_var_id}` | — |
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/applications/APP_ID/env-vars",
-    body: { key: "DATABASE_URL", value: "postgres://user:pass@host:5432/db", is_runtime: true, is_buildtime: false }
+    body: { key: "DATABASE_URL", value: "postgres://...", is_runtime: true, is_buildtime: false }
   })
   return res.body
 }
 ```
 
-### Update an Environment Variable
-
-```
-PUT /applications/{id}/env-vars/{env_var_id}
-```
-
-Body: `{ key, value, is_runtime, is_buildtime }`
-
-### Delete an Environment Variable
-
-```
-DELETE /applications/{id}/env-vars/{env_var_id}
-```
-
 ### Rules
 
-- **Allowed characters in keys**: lowercase and uppercase letters (`a-z`, `A-Z`), digits (`0-9`), and underscore (`_`). No hyphens, spaces, or special characters.
-- **Variable referencing**: use `${KEY}` syntax inside a value to reference another variable. Example: `DATABASE_URL` set to `postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/mydb`.
-- **Scoping**: `is_runtime: true` makes the variable available to the running process. `is_buildtime: true` makes it available during the build step. A variable can be both runtime and buildtime.
-- **Redeploy required**: changes to environment variables do not take effect until the application is redeployed.
+- **Key characters**: `[a-zA-Z0-9_]+`. No hyphens, dots, or spaces.
+- **Variable referencing**: use `${OTHER_KEY}` inside a value. Example: `postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/db`.
+- **Scoping**: `is_runtime` and `is_buildtime` both default to **true**. Set explicitly to limit a variable to one phase.
+- **Value max length**: 32768 chars.
+- **Redeploy required** for any change to take effect.
 
-### Static Site Environment Variables
+## 2. Sevalla-Injected Variables
 
-Static sites use the same endpoints at a different base path:
-
-```
-GET    /static-sites/{id}/env-vars
-POST   /static-sites/{id}/env-vars
-PUT    /static-sites/{id}/env-vars/{env_var_id}
-DELETE /static-sites/{id}/env-vars/{env_var_id}
-```
-
-Request and response schemas are identical to application env vars.
-
-## Sevalla-Injected Variables
-
-Sevalla automatically injects the following variables into every process. These are read-only and always available at runtime without any configuration.
+Auto-set on every process at runtime:
 
 | Variable | Description |
 |---|---|
@@ -72,118 +40,89 @@ Sevalla automatically injects the following variables into every process. These 
 | `SVL_APP_ID` | Application identifier |
 | `SVL_APP_NAME` | Application name |
 | `SVL_PROCESS_ID` | Process identifier |
-| `SVL_PROCESS_TYPE` | Process type (`web`, `worker`, `cron`, `job`) |
+| `SVL_PROCESS_TYPE` | `web` \| `worker` \| `cron` \| `job` |
 | `SVL_DEPLOYMENT_ID` | Current deployment identifier |
-| `SVL_DEPLOYMENT_INITIATED_BY` | Who triggered the deployment (username or "system") |
-| `SVL_DEPLOYMENT_TRIGGER` | What triggered the deployment (e.g., "manual", "git_push", "api") |
-| `SVL_DEPLOYMENT_COMMIT_SHA` | Git commit SHA of the deployed code |
-| `SVL_DEPLOYMENT_BRANCH` | Git branch that was deployed |
-| `SVL_DEPLOYMENT_DOCKER_IMAGE` | Docker image URL for the deployment |
-| `PORT` | Port the process should listen on (default `8080`) |
+| `SVL_DEPLOYMENT_INITIATED_BY` | Username or `"system"` |
+| `SVL_DEPLOYMENT_TRIGGER` | `manual`, `git_push`, `api`, etc. |
+| `SVL_DEPLOYMENT_COMMIT_SHA` | Commit SHA |
+| `SVL_DEPLOYMENT_BRANCH` | Git branch |
+| `SVL_DEPLOYMENT_DOCKER_IMAGE` | Image URL |
+| `PORT` | Port the process should listen on |
 
-Use these in application code to determine the current execution context. For example, check `SVL_PROCESS_TYPE` to run different logic in web vs. worker processes.
+Bind your HTTP server to `0.0.0.0:$PORT`.
 
-## Global Environment Variables
+## 3. Global Environment Variables
 
-Company-wide variables that are automatically deployed to all applications under the company.
+Company-wide, automatically deployed to every application. App-scoped variables with the same key win.
 
-```
-GET    /applications/global-env-vars
-POST   /applications/global-env-vars          — body: { key, value }
-PUT    /applications/global-env-vars/{id}     — body: { key, value }
-DELETE /applications/global-env-vars/{id}
-```
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/applications/global-env-vars` | — |
+| Create | POST | `/applications/global-env-vars` | `{ key, value }` |
+| Update | PUT | `/applications/global-env-vars/{id}` | `{ key?, value? }` |
+| Delete | DELETE | `/applications/global-env-vars/{id}` | — |
 
-Global variables are overridden by application-scoped variables with the same key. Use global variables for shared configuration like logging endpoints or feature flags that apply across all services.
+## 4. Static Site Environment Variables
 
-## Custom Domains
+Static sites use a **different schema** than apps — `is_runtime` / `is_buildtime` do not apply.
 
-### List Domains
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/static-sites/{id}/env-vars` | — |
+| Create | POST | `/static-sites/{id}/env-vars` | `{ key, value, is_production?, is_preview?, branch? }` |
+| Update | PUT | `/static-sites/{id}/env-vars/{env_var_id}` | same fields |
+| Delete | DELETE | `/static-sites/{id}/env-vars/{env_var_id}` | — |
 
-```
-GET /applications/{id}/domains
-```
+| Field | Default | Notes |
+|---|---|---|
+| `is_production` | true | Available in production builds |
+| `is_preview` | true | Available in preview-app builds |
+| `branch` | — | Scope to a single Git branch |
 
-### Add a Domain
+## 5. Custom Domains
+
+The field is `domain_name`, not `name`.
+
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/applications/{id}/domains` | — |
+| Add | POST | `/applications/{id}/domains` | `{ domain_name, is_wildcard?, custom_ssl_cert?, custom_ssl_key? }` |
+| Delete | DELETE | `/applications/{id}/domains/{domain_id}` | — |
+| Set primary | POST | `/applications/{id}/domains/{domain_id}/set-primary` | — |
+| Refresh verification | POST | `/applications/{id}/domains/{domain_id}/refresh-status` | — |
+| Toggle (enable/disable) | POST | `/applications/{id}/domains/{domain_id}/toggle` | — |
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/applications/APP_ID/domains",
-    body: { name: "example.com" }
+    body: { domain_name: "app.example.com" }
   })
   return res.body
 }
 ```
 
-### Delete a Domain
+The response includes the DNS records you must add:
 
-```
-DELETE /applications/{id}/domains/{domain_id}
-```
+1. **TXT** for ownership verification (`_cf-custom-hostname.<your-domain>`)
+2. **CNAME** for SSL validation (`_acme-challenge.<your-domain>`)
+3. **A** records (or **CNAME**) pointing your domain at Sevalla
 
-### Set Primary Domain
+Status progresses: `VERIFICATION` → `VERIFIED` (DNS confirmed, SSL provisioning) → `POINTING` (serving traffic). Propagation can take up to 48 hours; use `refresh-status` to re-check on demand.
 
-```
-POST /applications/{id}/domains/{domain_id}/set-primary
-```
+### Wildcards & custom SSL
 
-### Refresh Verification Status
+- `is_wildcard: true` covers `*.yourdomain.com`.
+- Provide `custom_ssl_cert` and `custom_ssl_key` (PEM) to skip auto-provisioning. Both must be set together.
+- Otherwise SSL is auto-provisioned via Cloudflare (free).
+- Custom domains require a paid pod tier — Hobby pods only get the default `*.sevalla.app` system domain.
 
-```
-POST /applications/{id}/domains/{domain_id}/refresh-status
-```
+### Static sites & load balancers
 
-### Toggle System Domain
+The exact same endpoints exist for static sites (`/static-sites/{id}/domains/...`) and load balancers (`/load-balancers/{id}/domains/...`).
 
-Enable or disable the default `*.sevalla.app` system domain:
-
-```
-POST /applications/{id}/domains/{domain_id}/toggle
-```
-
-### DNS Setup Steps
-
-After adding a custom domain, the API response includes DNS records that must be configured at your DNS provider:
-
-1. **TXT record** for domain ownership: set `_cf-custom-hostname.yourdomain.com` to the value from the API response.
-2. **CNAME record** for SSL validation: set `_acme-challenge.yourdomain.com` to the value from the API response.
-3. **A records** pointing your domain to Sevalla's IP addresses (provided in the API response).
-4. **Wait for verification**: the domain status progresses through `VERIFICATION` (DNS records not yet detected) then `VERIFIED` (DNS confirmed, SSL provisioning) then `POINTING` (fully active and serving traffic).
-
-Propagation can take up to 48 hours depending on DNS TTL settings.
-
-### Wildcard Domains
-
-To add a wildcard domain (`*.yourdomain.com`), set `is_wildcard: true` in the request body:
-
-```json
-{ "name": "yourdomain.com", "is_wildcard": true }
-```
-
-### SSL Certificates
-
-Free SSL certificates are provisioned automatically via Cloudflare. No manual certificate management is required.
-
-**Important**: Custom domains require upgrading from the Hobby pod size. Applications on the Hobby tier can only use the default system domain.
-
-### Domains for Other Resource Types
-
-The same domain management pattern applies to static sites and load balancers:
-
-```
-/static-sites/{id}/domains
-/load-balancers/{id}/domains
-```
-
-All sub-endpoints (`set-primary`, `refresh-status`, `toggle`) are available on both resource types.
-
-## Scaling
-
-### Vertical Scaling — Change Pod Size
-
-Upgrade or downgrade the compute resources for a process:
+## 6. Vertical Scaling (Pod Size)
 
 ```js
 async () => {
@@ -196,41 +135,26 @@ async () => {
 }
 ```
 
-Discover available sizes with:
+Discover sizes: `GET /resources/process-resource-types` (see `references/setup.md`).
 
-```
-GET /resources/process-resource-types
-```
+## 7. Horizontal Scaling
 
-### Pod Size Categories
+The `scaling_strategy` object **must** wrap its parameters in `config`.
 
-| Category | Examples | Use case |
-|---|---|---|
-| Hobby | -- | Development, testing |
-| Standard | S1, S2 | General workloads |
-| Memory-Optimized | M1, M2, M3 | Caching, data processing |
-| CPU-Optimized | C1, C2, C3 | Compute-heavy tasks |
-
-### Horizontal Scaling (Manual)
-
-Set a fixed number of instances for a process:
+### Manual
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "PATCH",
     path: "/applications/APP_ID/processes/PROCESS_ID",
-    body: { scaling_strategy: { type: "manual", instanceCount: 3 } }
+    body: { scaling_strategy: { type: "manual", config: { instanceCount: 3 } } }
   })
   return res.body
 }
 ```
 
-Maximum 20 instances per process. Available for `web` and `worker` process types only.
-
-### Horizontal Scaling (Auto)
-
-Auto-scale based on CPU utilization:
+### Horizontal autoscale
 
 ```js
 async () => {
@@ -240,9 +164,16 @@ async () => {
     body: {
       scaling_strategy: {
         type: "horizontal",
-        minInstanceCount: 1,
-        maxInstanceCount: 10,
-        targetCpuPercent: 80
+        config: {
+          minInstanceCount: 1,
+          maxInstanceCount: 10,
+          targetCpuPercent: 70,
+          targetMemoryPercent: 80,
+          scaleUpIntervalSeconds: 60,
+          scaleUpIncrement: 1,
+          scaleDownIntervalSeconds: 120,
+          scaleDownIncrement: 1
+        }
       }
     }
   })
@@ -250,19 +181,15 @@ async () => {
 }
 ```
 
-Sevalla will add or remove instances to keep average CPU usage near the target percentage.
-
-**Constraint**: Processes with persistent storage attached are limited to 1 instance. Horizontal scaling (manual or auto) is not available for these processes. Detach the persistent storage first if scaling is required.
-
-## Database Scaling
-
-Resize a database instance to increase CPU, memory, or storage.
-
-**PATCH /databases/{id}**
-
-| Field | Type | Description |
+| Field | Range | Notes |
 |---|---|---|
-| `resource_type_id` | string | New database size (from GET /resources/database-resource-types) |
+| `minInstanceCount` / `maxInstanceCount` | 0–50 | Max 50 instances per process |
+| `targetCpuPercent` / `targetMemoryPercent` | 1–100 | Optional; set at least one |
+| `scaleUpIncrement` / `scaleDownIncrement` | 1–5 | Instances added/removed per event |
+
+**Constraint:** Processes with persistent storage attached are limited to 1 instance — horizontal scaling is not available until storage is detached.
+
+## 8. Database Scaling
 
 ```js
 async () => {
@@ -275,90 +202,62 @@ async () => {
 }
 ```
 
-Database sizes can only be increased, not decreased. Storage changes are permanent.
+Database resources can only be **increased**. To downsize, create a new database and migrate.
 
-## Internal Networking
+## 9. Internal Networking
 
-Connect applications to databases over the private network within the same region. Internal connections use private IPs, incur no bandwidth charges, and have lower latency than public connections.
+Connect apps to databases (or apps to apps, databases to databases) over the private network in the same cluster — no bandwidth charges, lowest latency.
 
-### List Internal Connections
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/databases/{id}/internal-connections` | — |
+| Create | POST | `/databases/{id}/internal-connections` | `{ target_id, target_type }` |
+| Delete | DELETE | `/databases/{id}/internal-connections/{connection_id}` | — |
 
-```
-GET /databases/{id}/internal-connections
-```
-
-### Create an Internal Connection
+`target_type` is `app` or `database` (lowercase).
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/databases/DB_ID/internal-connections",
-    body: { app_id: "APP_ID" }
+    body: { target_id: "APP_ID", target_type: "app" }
   })
   return res.body
 }
 ```
 
-### Delete an Internal Connection
+After creating the connection, set the returned internal hostname/port as env vars on the application, then redeploy. Both resources must be in the same cluster.
 
-```
-DELETE /databases/{id}/internal-connections/{connection_id}
-```
+### Toggle external DB access
 
-After creating an internal connection, set the internal hostname and port as environment variables on the application. The internal hostname is returned in the connection response. Both the application and the database must be in the same data center region.
+**POST /databases/{id}/external-connection/toggle** — flips the public connection on or off. No body. Use when running migrations or connecting from local tools; disable when not needed.
 
-### Toggle External Database Connection
+## 10. TCP Proxies
 
-Enable or disable public internet access to a database (useful for connecting from local development tools, running migrations, or external monitoring):
+Expose a non-HTTP port to the public internet (WebSocket, MQTT, custom TCP).
 
-```js
-async () => {
-  const res = await sevalla.request({
-    method: "POST",
-    path: "/databases/DB_ID/external-connection/toggle"
-  })
-  return res.body
-}
-```
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/applications/{id}/tcp-proxies` | — |
+| Create | POST | `/applications/{id}/tcp-proxies` | `{ process_id, port }` |
+| Delete | DELETE | `/applications/{id}/tcp-proxies/{tcp_proxy_id}` | — |
 
-When external connections are enabled, the database becomes accessible via its `external_hostname` and `external_port`. Disable external connections when not needed to reduce attack surface.
+Each proxy gets a unique external port mapped to the specified internal `port`. `process_id` is required.
 
-## TCP Proxies
+## 11. Private Ports
 
-Expose non-HTTP services to the internet. Use TCP proxies for protocols like WebSocket, MQTT, RabbitMQ, or any custom TCP protocol.
+Cluster-internal ports for service-to-service traffic. Not exposed publicly.
 
-```
-GET    /applications/{id}/tcp-proxies
-POST   /applications/{id}/tcp-proxies        — body: { port: 27017 }
-DELETE /applications/{id}/tcp-proxies/{tcp_proxy_id}
-```
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/applications/{id}/private-ports` | — |
+| Create | POST | `/applications/{id}/private-ports` | `{ process_id, port }` |
+| Delete | DELETE | `/applications/{id}/private-ports/{private_port_id}` | — |
 
-Maximum 3 TCP proxies per application. Each proxy is assigned a unique external port that maps to the specified internal port.
+## 12. IP Restrictions
 
-## Private Ports
-
-Internal-only ports for service-to-service communication within the Sevalla network. Private ports are not exposed to the public internet.
-
-```
-GET    /applications/{id}/private-ports
-POST   /applications/{id}/private-ports       — body: { port: 9090 }
-DELETE /applications/{id}/private-ports/{private_port_id}
-```
-
-Use private ports when one application needs to call another over an internal protocol (gRPC, custom TCP) without public exposure.
-
-## IP Restrictions
-
-Control access to applications and databases by allowlisting or denylisting IP addresses.
-
-### Get Current Restrictions
-
-```
-GET /applications/{id}/ip-restriction
-```
-
-### Update IP Restrictions
+Allow- or deny-list IPs / CIDRs on an application or database.
 
 ```js
 async () => {
@@ -368,70 +267,29 @@ async () => {
     body: {
       type: "allow",
       is_enabled: true,
-      ip_list: ["1.2.3.4", "10.0.0.0/8"]
+      ip_list: ["203.0.113.0/24", "198.51.100.1"]
     }
   })
   return res.body
 }
 ```
 
-- `type: "allow"` — only the listed IPs can access the resource (allowlist).
-- `type: "deny"` — the listed IPs are blocked; all others can access (denylist).
-- `is_enabled: false` — disables IP restrictions without removing the configuration.
-- CIDR notation is supported (e.g., `10.0.0.0/8`).
+`PUT` requires all three fields. Set `is_enabled: false` to keep the configuration but stop enforcing it. Max 500 entries. Read current state with `GET /applications/{id}/ip-restriction`. Same schema at `/databases/{id}/ip-restriction`.
 
-Database IP restrictions use the same schema at `/databases/{id}/ip-restriction`.
+## 13. CDN & Cache
 
-## CDN & Edge Cache
-
-### Toggle CDN
-
-Enable or disable CDN caching for an application:
-
-```
-POST /applications/{id}/cdn/toggle
-```
-
-### Purge Edge Cache
-
-Clear the server-side edge cache and CDN cache:
-
-```
-POST /applications/{id}/purge-cache
-```
-
-This purges both the application edge cache and the CDN cache in a single call.
-
-## Static Site Cache
-
-### Purge Static Site Cache
-
-```
-POST /static-sites/{id}/purge-cache
-```
-
-Clear the CDN cache for a static site. Propagation takes 2-5 minutes globally.
-
-```js
-async () => {
-  const res = await sevalla.request({
-    method: "POST",
-    path: "/static-sites/STATIC_SITE_ID/purge-cache"
-  })
-  return res.body
-}
-```
-
-## Hibernation
-
-Auto-sleep idle applications to save costs. Hibernated apps wake automatically on the next incoming request (8-20 second cold start).
-
-Update via **PATCH** `/applications/{app_id}`:
-
-| Field | Type | Description |
+| Action | Method | Path |
 |---|---|---|
-| `hibernation_enabled` | boolean | Enable or disable auto-hibernation |
-| `hibernate_after_seconds` | integer | Seconds of inactivity before hibernating |
+| Toggle app CDN | POST | `/applications/{id}/cdn/toggle` |
+| Purge app edge + CDN cache | POST | `/applications/{id}/purge-cache` |
+| Purge static site CDN | POST | `/static-sites/{id}/purge-cache` |
+| Toggle static site pretty URLs | POST | `/static-sites/{id}/pretty-url/toggle` |
+
+CDN propagation takes 2–5 minutes globally after a purge.
+
+## 14. Hibernation
+
+Auto-sleep idle apps. Hibernated apps wake on the next request (8–20 s cold start).
 
 ```js
 async () => {
@@ -444,38 +302,22 @@ async () => {
 }
 ```
 
-Hibernation is only available for applications with a single web process instance. Applications with horizontal scaling or persistent storage may not support hibernation.
+`hibernate_after_seconds` range: 1 to 604800 (7 days). Hibernation requires a single web instance with no persistent storage.
 
-## Health Checks
+## 15. Health Checks (Probes)
 
-Configure readiness and liveness probes on processes via:
-
-```
-PATCH /applications/{id}/processes/{process_id}
-```
-
-### Readiness Probe
-
-Determines whether a process is ready to receive traffic. New instances are not added to the load balancer until the readiness probe passes.
+Set readiness and liveness probes via **PATCH /applications/{id}/processes/{process_id}**.
 
 ```json
 {
   "readiness_probe": {
-    "httpGet": { "path": "/health", "port": 8080 },
+    "httpGet": { "path": "/health", "port": 8080, "scheme": "HTTP" },
     "initialDelaySeconds": 10,
     "periodSeconds": 10,
     "timeoutSeconds": 5,
+    "successThreshold": 1,
     "failureThreshold": 3
-  }
-}
-```
-
-### Liveness Probe
-
-Determines whether a process is still alive. If the liveness probe fails, the container is restarted automatically.
-
-```json
-{
+  },
   "liveness_probe": {
     "tcpSocket": { "port": 8080 },
     "initialDelaySeconds": 30,
@@ -486,25 +328,23 @@ Determines whether a process is still alive. If the liveness probe fails, the co
 }
 ```
 
-### Probe Types
-
-| Type | Config | Use case |
+| Probe action | Config | Use case |
 |---|---|---|
-| `httpGet` | `{ path, port }` | HTTP endpoints returning 200-399 |
-| `tcpSocket` | `{ port }` | Check if a port is accepting connections |
-| `exec` | `{ command: ["cmd", "arg1"] }` | Run a custom command; exit code 0 = healthy |
+| `httpGet` | `{ path, port, host?, scheme?, httpHeaders? }` | HTTP endpoints returning 2xx/3xx |
+| `tcpSocket` | `{ port }` | TCP port accepts connections |
+| `exec` | `{ command: ["cmd", "arg"] }` | Custom check; exit 0 = healthy |
 
-## Processes
+Only `web` processes support probes. Readiness gates new pods from receiving traffic; liveness failures restart the container.
 
-Processes define the runtime units within an application.
+## 16. Processes
 
-### List Processes
-
-```
-GET /applications/{id}/processes
-```
-
-### Create a Process
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/applications/{id}/processes` | — |
+| Get | GET | `/applications/{id}/processes/{process_id}` | — |
+| Create | POST | `/applications/{id}/processes` | see below |
+| Update | PATCH | `/applications/{id}/processes/{process_id}` | partial body |
+| Delete | DELETE | `/applications/{id}/processes/{process_id}` | — |
 
 ```js
 async () => {
@@ -515,73 +355,48 @@ async () => {
       display_name: "background-worker",
       type: "worker",
       entrypoint: "node worker.js",
-      port: 8080,
-      resource_type_id: "S1"
+      resource_type_id: "S1_RESOURCE_TYPE_ID"
     }
   })
   return res.body
 }
 ```
 
-### Update a Process
+### Process types
 
-```
-PATCH /applications/{id}/processes/{process_id}
-```
-
-### Delete a Process
-
-```
-DELETE /applications/{id}/processes/{process_id}
-```
-
-### Process Types
-
-| Type | Purpose | Internet-accessible | Max instances |
+| Type | Purpose | Internet-accessible | Notes |
 |---|---|---|---|
-| `web` | HTTP traffic | Yes | 20 |
-| `worker` | Background processing | No | 20 |
-| `cron` | Scheduled execution | No | 1 |
-| `job` | One-off runs (pre/post deploy) | No | 1 |
+| `web` | HTTP/gRPC traffic | yes | Set `port`, `is_ingress_enabled`, `ingress_protocol` (`http` or `grpc`), probes |
+| `worker` | Background processing | no | — |
+| `cron` | Scheduled execution | no | Set `schedule` (5-field cron) and `time_zone` (IANA, e.g. `"America/New_York"`) |
+| `job` | One-off / lifecycle hooks | no | Set `job_start_policy`: `beforeDeployment`, `afterSuccessDeployment`, `afterFailedDeployment` |
 
-**Cron processes**: set `schedule` to a 5-field cron expression (e.g., `"*/5 * * * *"` for every 5 minutes) and `time_zone` to an IANA time zone identifier (e.g., `"America/New_York"`).
+Manually trigger a cron job via **POST /applications/{id}/processes/{process_id}/trigger** (see `references/operate.md`).
 
-**Job processes**: set `job_start_policy` to control when the job runs relative to deployments:
-- `"beforeDeployment"` — runs before the new version is deployed.
-- `"afterSuccessDeployment"` — runs after a successful deployment.
-- `"afterFailedDeployment"` — runs after a failed deployment (for cleanup or notifications).
+## 17. Application Settings
 
-## Application Settings
+**PATCH /applications/{id}**
 
-Update general application properties via **PATCH** `/applications/{id}`:
+| Field | Notes |
+|---|---|
+| `display_name` | 1–64 chars |
+| `auto_deploy`, `default_branch`, `wait_for_checks`, `allow_deploy_paths`, `ignore_deploy_paths` | Auto-deploy config (`references/deploy.md`) |
+| `hibernation_enabled`, `hibernate_after_seconds` | Hibernation (section 14) |
+| `build_*`, `dockerfile_*`, `pack_builder`, `buildpacks`, `nixpacks_version` | Build config (`references/deploy.md`) |
+| `source`, `git_type`, `repo_url`, `docker_image`, `docker_registry_credential_id` | Re-point the source |
 
-| Field | Type | Description |
-|---|---|---|
-| `display_name` | string | Application display name |
-| `protocol` | string | `"http"` (default) or `"grpc"` |
+Static sites and object storage support `PATCH /static-sites/{id}` and `PATCH /object-storage/{id}` for renaming and resource-specific settings.
 
-```js
-async () => {
-  const res = await sevalla.request({
-    method: "PATCH",
-    path: "/applications/APP_ID",
-    body: { display_name: "my-api", protocol: "http" }
-  })
-  return res.body
-}
-```
-
-Static sites and object storage also support **PATCH** for updating `display_name` and other resource-specific settings at their respective endpoints (`/static-sites/{id}`, `/object-storage/{id}`).
-
-## Troubleshoot Configuration
+## 18. Troubleshooting
 
 | Problem | Cause | Resolution |
 |---|---|---|
-| Domain stuck in `VERIFICATION` | DNS records not detected | Verify TXT and CNAME records are correct. Wait up to 48 hours for propagation. Use `refresh-status` endpoint to re-check. |
-| SSL certificate not issuing | CAA record conflict | Check for CAA DNS records that restrict certificate authorities. Remove or add Cloudflare's CA to the allowed list. |
-| Cannot scale horizontally | Persistent storage attached | Processes with persistent storage are limited to 1 instance. Detach persistent storage before enabling horizontal scaling. |
-| Env var not taking effect | Missing redeploy | Environment variable changes require a redeployment. Trigger a new deployment after updating env vars. |
-| Internal connection failing | Region mismatch | The application and database must be in the same data center region. Check both resources and migrate if needed. |
-| IP restriction blocking legitimate traffic | Incorrect CIDR range | Review the `ip_list` entries. Ensure CIDR notation covers all required source IPs. Disable temporarily with `is_enabled: false` to verify. |
-| App not hibernating | Multiple instances or persistent storage | Hibernation requires a single web process instance with no persistent storage. Reduce instances to 1 and detach storage. |
-| Database resize failing | Attempting to downsize | Database sizes can only be increased. Create a new database at the smaller size and migrate data if a downgrade is needed. |
+| Domain stuck on `VERIFICATION` | DNS records missing or wrong | Re-check TXT/CNAME/A records; call `refresh-status`. Allow up to 48 h. |
+| SSL won't issue | CAA record blocks Cloudflare | Add Cloudflare to CAA or remove the restrictive record. |
+| Env var change has no effect | App not redeployed | Trigger a deploy (`is_restart: true` is enough for runtime-only vars). |
+| Can't horizontally scale | Persistent storage attached | Detach the volume; max 1 instance with persistent storage. |
+| Internal connection fails | App and DB in different clusters | They must share a cluster. Migrate one to match. |
+| IP allowlist blocks real users | CIDR too narrow | Widen `ip_list` or temporarily `is_enabled: false`. |
+| Hibernation doesn't sleep app | Multiple instances or persistent storage | Reduce to 1 instance and detach storage. |
+| Database resize 4xx | Trying to shrink | DBs only scale up. Create a smaller DB and migrate. |
+| `target_type` rejected | Wrong case | Use lowercase `app` or `database`. |

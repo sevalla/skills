@@ -1,107 +1,64 @@
 # Setup & Provisioning Reference
 
-This reference covers discovering existing resources and creating new ones on Sevalla: projects, applications, databases, static sites, and object storage buckets.
+Discover existing resources and create new ones: projects, applications, databases, static sites, object storage buckets, plus the resource catalogs you need to pick a region and size.
 
-## 1. List & Discover Resources
+> **No `company_id` in any body.** The API key already identifies the company. Project IDs are always optional unless stated.
 
-### List Projects
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/projects", query: { limit: 100 } })
-  return res.body
-}
-```
-
-### List Applications
+## 1. List & Discover
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications", query: { limit: 100 } })
-  return res.body
-}
+// Projects
+async () => (await sevalla.request({ method: "GET", path: "/projects", query: { limit: 100 } })).body
+// Applications
+async () => (await sevalla.request({ method: "GET", path: "/applications", query: { limit: 100 } })).body
+// Databases
+async () => (await sevalla.request({ method: "GET", path: "/databases", query: { limit: 100 } })).body
+// Static sites
+async () => (await sevalla.request({ method: "GET", path: "/static-sites", query: { limit: 100 } })).body
+// Object storage buckets
+async () => (await sevalla.request({ method: "GET", path: "/object-storage", query: { limit: 100 } })).body
+// Load balancers
+async () => (await sevalla.request({ method: "GET", path: "/load-balancers", query: { limit: 100 } })).body
+// Pipelines
+async () => (await sevalla.request({ method: "GET", path: "/pipelines", query: { limit: 100 } })).body
 ```
 
-### List Databases
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/databases", query: { limit: 100 } })
-  return res.body
-}
-```
-
-### List Static Sites
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/static-sites", query: { limit: 100 } })
-  return res.body
-}
-```
-
-### List Object Storage Buckets
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/object-storage", query: { limit: 100 } })
-  return res.body
-}
-```
-
-All list endpoints support `limit` (max 100) and `offset` query parameters for pagination. Default page size is 25.
+All list endpoints accept `limit` (1–100, default 25) and `offset` (0–10000, default 0).
 
 ## 2. Create Project
 
-Projects are an optional way to group related resources within a company. You do not need to create a project before provisioning resources — applications, databases, static sites, and storage buckets can all be created directly under a company.
-
-**POST /projects**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| company_id | string | yes | The company this project belongs to |
-| display_name | string | yes | Human-readable project name |
+Only `display_name` is required.
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/projects",
-    body: {
-      company_id: "COMPANY_ID",
-      display_name: "my-project"
-    }
+    body: { display_name: "my-project" }
   })
   return res.body
 }
 ```
-
-The response includes the project `id` needed for all subsequent resource creation.
 
 ## 3. Create Application
 
-Applications deploy from three source types: private Git repositories, public Git URLs, or Docker images.
-
 **POST /applications**
 
-### Common fields (all source types)
-
-| Field | Type | Required | Description |
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| company_id | string | yes | Company identifier |
-| project_id | string | no | Project identifier (optional — omit to create without a project) |
-| display_name | string | yes | Application name |
-| cluster_id | string | yes | Target data center (see section 9) |
-| source | string | yes | `"privateGit"`, `"publicGit"`, or `"dockerImage"` |
+| display_name | string | yes | 2–64 chars |
+| cluster_id | string (uuid) | yes | From `GET /resources/clusters` |
+| source | string | yes | `privateGit` \| `publicGit` \| `dockerImage` |
+| project_id | string (uuid) | no | Omit to skip project assignment |
+| git_type | string | conditional | `github` \| `bitbucket` \| `gitlab` (privateGit / publicGit) |
+| repo_url | string | conditional | Required for git sources |
+| default_branch | string | no | Defaults to repo default |
+| docker_image | string | conditional | Required for `dockerImage` |
+| docker_registry_credential_id | string (uuid) | no | Required for private images (see `references/manage.md`) |
 
-### Source: Private Git (GitHub / GitLab / Bitbucket)
+**Build configuration is not set on create.** After the application is created, use `PATCH /applications/{id}` to set `build_type`, `build_path`, `dockerfile_path`, `docker_context`, `pack_builder`, `buildpacks`, `nixpacks_version`, `build_cache_enabled`, `auto_deploy`, `wait_for_checks`, `allow_deploy_paths`, or `ignore_deploy_paths`. See `references/deploy.md`.
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| git_type | string | yes | `"github"`, `"bitbucket"`, or `"gitlab"` |
-| repo_url | string | yes | Full repository URL |
-| default_branch | string | yes | Branch to deploy from (e.g. `"main"`) |
-| build_type | string | no | `"nixpacks"` (default), `"dockerfile"`, or `"pack"` |
+### Private Git
 
 ```js
 async () => {
@@ -109,28 +66,21 @@ async () => {
     method: "POST",
     path: "/applications",
     body: {
-      company_id: "COMPANY_ID",
-      project_id: "PROJECT_ID",
       display_name: "my-web-app",
+      cluster_id: "CLUSTER_ID",
       source: "privateGit",
       git_type: "github",
       repo_url: "https://github.com/org/repo",
-      default_branch: "main",
-      build_type: "nixpacks",
-      cluster_id: "CLUSTER_ID"
+      default_branch: "main"
     }
   })
   return res.body
 }
 ```
 
-### Source: Public Git URL
+The Git provider must already be connected to the company — list connected providers with `GET /git/providers`.
 
-No authentication needed. Provide the public repository URL directly.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| repo_url | string | yes | Public Git repository URL |
+### Public Git
 
 ```js
 async () => {
@@ -138,26 +88,18 @@ async () => {
     method: "POST",
     path: "/applications",
     body: {
-      company_id: "COMPANY_ID",
-      project_id: "PROJECT_ID",
       display_name: "open-source-app",
+      cluster_id: "CLUSTER_ID",
       source: "publicGit",
       repo_url: "https://github.com/public-org/public-repo",
-      default_branch: "main",
-      cluster_id: "CLUSTER_ID"
+      default_branch: "main"
     }
   })
   return res.body
 }
 ```
 
-### Source: Docker Image
-
-Deploy a pre-built container image.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| docker_image | string | yes | Full image path (e.g. `"docker.io/org/image:tag"`) |
+### Docker Image
 
 ```js
 async () => {
@@ -165,64 +107,47 @@ async () => {
     method: "POST",
     path: "/applications",
     body: {
-      company_id: "COMPANY_ID",
-      project_id: "PROJECT_ID",
       display_name: "containerized-app",
+      cluster_id: "CLUSTER_ID",
       source: "dockerImage",
-      docker_image: "docker.io/myorg/myapp:latest",
-      cluster_id: "CLUSTER_ID"
+      docker_image: "docker.io/myorg/myapp:latest"
+      // docker_registry_credential_id: "<uuid>"  // required for private images
     }
   })
   return res.body
 }
 ```
 
-**Important:** Docker images must be built for the `linux/amd64` architecture.
+Images must be built for `linux/amd64`. On Apple Silicon: `docker build --platform linux/amd64 -t myapp:latest .`
 
-### Build Types
+### Build Strategies
 
-**Nixpacks** (default) — Auto-detects the language and framework from source code. Supports 20+ languages: Node.js, Python, Go, Ruby, PHP, Java, Rust, Deno, Elixir, C#/.NET, Swift, and Scala. Configure build behavior with a `nixpacks.toml` file in the repository root.
-
-**Dockerfile** — Full control over the build process using a standard Dockerfile. Set `dockerfile_path` (path to the Dockerfile relative to repo root) and `docker_context` (build context directory) when the Dockerfile is not at the default location.
-
-**Buildpacks** (`"pack"`) — Heroku-style buildpacks for standardized builds. Set `pack_builder` to specify the builder image and `buildpacks` as an array of buildpack URIs. The primary language buildpack must be listed last in the array.
+- **Nixpacks** (default) — auto-detects language. Supports Node.js, Python, Go, Ruby, PHP, Java, Rust, Deno, Elixir, .NET, Swift, Scala. Configure with `nixpacks.toml`. Pin a version via `nixpacks_version` (e.g. `"1.29"`, `"1.39"`, `"1.41"`).
+- **Dockerfile** — full control. Set `dockerfile_path` and `docker_context` on PATCH.
+- **Buildpacks** (`build_type: "pack"`) — Cloud Native Buildpacks. Choose a `pack_builder` (`"heroku/builder:22"` or `"heroku/builder:24"`) and pass `buildpacks: [{ order, source }]` with the primary language buildpack last.
 
 ## 4. Provision Database
 
-### Supported engines and versions
-
-| Engine | Versions |
-|---|---|
-| PostgreSQL | 9.6, 10, 11, 12, 13, 14, 15, 16, 17 |
-| MySQL | 8.0, 9.0 |
-| MariaDB | 10.4, 10.5, 10.6, 10.11, 11.0, 11.1 |
-| Redis | 5.0, 6.x, 7.x, 8.x |
-| Valkey | 7.2 |
-
 **POST /databases**
 
-| Field | Type | Required | Description |
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| company_id | string | yes | Company identifier |
-| project_id | string | no | Project identifier (optional — omit to create without a project) |
-| display_name | string | yes | Database name |
-| type | string | yes | Engine name (e.g. `"postgresql"`, `"mysql"`, `"mariadb"`, `"redis"`, `"valkey"`) |
-| version | string | yes | Engine version (e.g. `"17"`, `"8.0"`) |
-| cluster_id | string | yes | Target data center |
-| resource_type_id | string | yes | Database size (see section 10) |
+| display_name | string | yes | 2–64 chars |
+| type | string | yes | `postgresql` \| `mysql` \| `mariadb` \| `redis` \| `valkey` |
+| version | string | yes | Engine version, e.g. `"16"`, `"8.0"` |
+| cluster_id | string (uuid) | yes | From `GET /resources/clusters` |
+| resource_type_id | string | yes | From `GET /resources/database-resource-types` |
+| db_name | string | yes | 2–100 chars; `[a-zA-Z0-9_\-+]+` |
+| db_password | string | yes | 4–100 chars; `[a-zA-Z0-9_?<>#@\-=+]+` |
+| db_user | string | no | 2–32 chars; cannot be `root` or `postgres` |
+| project_id | string (uuid) | no | Optional |
+| extensions | object | no | PostgreSQL only — see below |
 
-### Find available database sizes
+PostgreSQL extensions:
 
-Before creating a database, look up valid `resource_type_id` values:
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/resources/database-resource-types" })
-  return res.body
-}
+```json
+{ "enable_vector": true, "enable_postgis": false, "enable_cron": false }
 ```
-
-### Create a PostgreSQL database
 
 ```js
 async () => {
@@ -230,43 +155,42 @@ async () => {
     method: "POST",
     path: "/databases",
     body: {
-      company_id: "COMPANY_ID",
-      project_id: "PROJECT_ID",
       display_name: "main-postgres",
       type: "postgresql",
-      version: "17",
+      version: "16",
       cluster_id: "CLUSTER_ID",
-      resource_type_id: "RESOURCE_TYPE_ID"
+      resource_type_id: "RESOURCE_TYPE_ID",
+      db_name: "appdb",
+      db_user: "appuser",
+      db_password: "STRONG-PW-here",
+      extensions: { enable_vector: true }
     }
   })
   return res.body
 }
 ```
 
-The response includes connection details (host, port, username, password, database name) and the database `id`.
+The response includes connection details (host, port, username, password, database name) and the database `id`. Connect apps to it via `POST /databases/{id}/internal-connections` — see `references/configure.md`.
 
 ## 5. Create Static Site
 
-Static sites are built from Git repositories and served globally via Cloudflare CDN (260+ edge locations).
-
-**Free tier limits:** 100 sites, 600 build minutes per month, 100 GB bandwidth per month.
-
 **POST /static-sites**
 
-| Field | Type | Required | Description |
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| company_id | string | yes | Company identifier |
-| project_id | string | no | Project identifier (optional — omit to create without a project) |
-| display_name | string | yes | Site name |
-| source | string | yes | `"privateGit"` or `"publicGit"` |
-| git_type | string | conditional | Required for privateGit: `"github"`, `"bitbucket"`, or `"gitlab"` |
-| repo_url | string | yes | Repository URL |
-| default_branch | string | yes | Branch to build from |
-| install_command | string | no | Dependency install command (e.g. `"npm install"`) |
-| build_command | string | no | Build command (e.g. `"npm run build"`) |
-| published_directory | string | no | Output directory to serve (e.g. `"dist"`, `"build"`, `"public"`) |
-| root_directory | string | no | Subdirectory containing the site source (for monorepos) |
-| node_version | string | no | Node.js version for the build environment |
+| display_name | string | yes | 2–64 chars |
+| repo_url | string | yes | Max 2048 chars |
+| default_branch | string | yes | 1–255 chars |
+| source | string | no | `privateGit` (default) \| `publicGit` |
+| git_type | string | conditional | `github` \| `bitbucket` \| `gitlab` |
+| auto_deploy | boolean | no | Deploy on every push |
+| is_preview_enabled | boolean | no | Create preview apps for PRs |
+| install_command | string | no | e.g. `npm install` |
+| build_command | string | no | e.g. `npm run build` |
+| published_directory | string | no | e.g. `dist`, `build`, `public` |
+| root_directory | string | no | For monorepos |
+| node_version | string | no | e.g. `"20"` |
+| project_id | string (uuid) | no | |
 
 ```js
 async () => {
@@ -274,8 +198,6 @@ async () => {
     method: "POST",
     path: "/static-sites",
     body: {
-      company_id: "COMPANY_ID",
-      project_id: "PROJECT_ID",
       display_name: "marketing-site",
       source: "privateGit",
       git_type: "github",
@@ -283,30 +205,29 @@ async () => {
       default_branch: "main",
       install_command: "npm install",
       build_command: "npm run build",
-      published_directory: "dist"
+      published_directory: "dist",
+      node_version: "20",
+      auto_deploy: true,
+      is_preview_enabled: true
     }
   })
   return res.body
 }
 ```
 
-## 6. Create Object Storage Bucket
+Free tier: 100 sites, 600 build minutes/mo, 100 GB bandwidth/mo.
 
-S3-compatible object storage powered by Cloudflare R2. Pricing: $0.02/GB stored per month, no egress fees.
+## 6. Create Object Storage Bucket
 
 **POST /object-storage**
 
-| Field | Type | Required | Description |
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| company_id | string | yes | Company identifier |
-| project_id | string | no | Project identifier (optional — omit to create without a project) |
-| display_name | string | yes | Bucket name |
-| location | string | yes | Storage region hint |
-| jurisdiction | string | no | Data sovereignty jurisdiction |
-
-**Locations:** `apac` (Asia-Pacific), `eeur` (Eastern Europe), `enam` (Eastern North America), `oc` (Oceania), `weur` (Western Europe), `wnam` (Western North America)
-
-**Jurisdictions:** `default` (no restriction), `eu` (EU data residency), `fedramp` (FedRAMP compliant)
+| display_name | string | yes | 2–64 chars |
+| location | string | no | `apac`, `eeur`, `enam` (default), `oc`, `weur`, `wnam` |
+| jurisdiction | string | no | `default`, `eu`, `fedramp` |
+| public_access | boolean | no | Enable public CDN domain (default false) |
+| project_id | string (uuid) | no | |
 
 ```js
 async () => {
@@ -314,38 +235,35 @@ async () => {
     method: "POST",
     path: "/object-storage",
     body: {
-      company_id: "COMPANY_ID",
-      project_id: "PROJECT_ID",
       display_name: "media-assets",
       location: "wnam",
-      jurisdiction: "default"
+      jurisdiction: "default",
+      public_access: true
     }
   })
   return res.body
 }
 ```
 
-The response includes the bucket `id`, endpoint URL, and access credentials.
+The response includes the bucket `id`, S3-compatible endpoint URL, and access key / secret. For CORS, objects, public CDN domain, or credential rotation, see `references/manage.md`.
 
 ## 7. Clone Application
 
-Create a copy of an existing application with all its configuration (environment variables, build settings, process configuration). Useful for creating staging environments from production.
-
 **POST /applications/{id}/clone**
 
-| Field | Type | Required | Description |
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| display_name | string | yes | Name for the cloned application |
-| cluster_id | string | no | Target data center (defaults to same as source) |
+| display_name | string | yes | Must be unique in the company |
+| cluster_id | string (uuid) | no | Defaults to source cluster |
+
+Clones the source app's configuration, env vars, processes, and build settings. Useful for staging-from-prod.
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/applications/APP_ID/clone",
-    body: {
-      display_name: "my-app-staging"
-    }
+    body: { display_name: "my-app-staging" }
   })
   return res.body
 }
@@ -353,173 +271,97 @@ async () => {
 
 ## 8. Add Service to Project
 
-Move or link an existing service into a project.
-
 **POST /projects/{id}/services**
 
-| Field | Type | Required | Description |
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| service_id | string | yes | ID of the service to add |
-| service_type | string | yes | Type of the service (e.g. `"application"`, `"database"`, `"static-site"`, `"object-storage"`) |
+| service_id | string (uuid) | yes | The service to move |
+| service_type | string | yes | `app` \| `database` \| `pipeline` \| `object-storage` |
+
+Static sites and load balancers are not addable via this endpoint — set their project at creation or via their own PATCH endpoint.
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "POST",
     path: "/projects/PROJECT_ID/services",
-    body: {
-      service_id: "SERVICE_ID",
-      service_type: "application"
-    }
+    body: { service_id: "SERVICE_ID", service_type: "app" }
   })
   return res.body
 }
 ```
 
-## 9. Find Available Clusters
+Adding a pipeline also moves every stage's app into the project.
 
-Returns all 25 GCP data center regions with their IDs. Use a cluster ID when creating applications and databases.
+Remove with `DELETE /projects/{id}/services/{service_id}`.
 
-**GET /resources/clusters**
+## 9. Resource Catalogs
 
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/resources/clusters" })
-  return res.body
-}
-```
-
-Choose the region closest to your users for lowest latency. The response includes the cluster `id`, display name, and geographic location for each region.
-
-## 10. Find Available Pod & Database Sizes
-
-### Pod sizes for applications
-
-**GET /resources/process-resource-types**
+### Clusters (regions)
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/resources/process-resource-types" })
-  return res.body
-}
+async () => (await sevalla.request({ method: "GET", path: "/resources/clusters" })).body
 ```
 
-Common pod size categories:
+Pick the region closest to your users. The response includes `id`, `display_name`, and geographic location for each region. **Never hard-code cluster IDs** — they change over time.
 
-| Category | Sizes | Typical Use |
+### Process sizes (app pods)
+
+```js
+async () => (await sevalla.request({ method: "GET", path: "/resources/process-resource-types" })).body
+```
+
+| Tier | Examples | Use case |
 |---|---|---|
-| Hobby | Hobby | Personal projects, experimentation |
-| Standard | S1, S2 | Production workloads with balanced CPU and memory |
-| Memory-Optimized | M1, M2, M3 | Caching, in-memory processing, large datasets |
-| CPU-Optimized | C1, C2, C3 | Compute-heavy tasks, data processing, compilation |
+| Hobby | Hobby | Development, testing (single small pod) |
+| Standard | S1, S2 | Balanced general workloads |
+| Memory-Optimized | M1, M2, M3 | Caching, in-memory processing |
+| CPU-Optimized | C1, C2, C3 | Compute-heavy tasks |
 
 ### Database sizes
 
-**GET /resources/database-resource-types**
+```js
+async () => (await sevalla.request({ method: "GET", path: "/resources/database-resource-types" })).body
+```
+
+Use the response `id` as `resource_type_id` when creating a database.
+
+### Connected Git providers
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/resources/database-resource-types" })
-  return res.body
-}
+async () => (await sevalla.request({ method: "GET", path: "/git/providers" })).body
 ```
 
-Use the `id` field from the response as the `resource_type_id` when creating a database.
+Returns the GitHub / GitLab / Bitbucket installations connected to the company. Required before `source: "privateGit"` can use a given provider.
 
-## 11. Troubleshoot Setup
+## 10. Delete Resources
 
-### "Repo not found"
-
-- Verify the git provider connection is active in the Sevalla dashboard.
-- Check that the `repo_url` format matches the provider: `https://github.com/owner/repo`, `https://gitlab.com/owner/repo`, or `https://bitbucket.org/owner/repo`.
-- Confirm the Sevalla integration has read access to the repository.
-- For private repos, ensure `source` is set to `"privateGit"` and `git_type` matches the provider.
-
-### "Cluster not found"
-
-Fetch valid cluster IDs before creating resources:
+**Always confirm with the user before deleting.** Deletion is irreversible.
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/resources/clusters" })
-  return res.body
-}
+// Application
+async () => (await sevalla.request({ method: "DELETE", path: "/applications/APP_ID" })).status
+// Database
+async () => (await sevalla.request({ method: "DELETE", path: "/databases/DB_ID" })).status
+// Static site
+async () => (await sevalla.request({ method: "DELETE", path: "/static-sites/STATIC_SITE_ID" })).status
+// Object storage bucket
+async () => (await sevalla.request({ method: "DELETE", path: "/object-storage/BUCKET_ID" })).status
+// Project (services inside the project are not deleted)
+async () => (await sevalla.request({ method: "DELETE", path: "/projects/PROJECT_ID" })).status
 ```
 
-Use the `id` field from the response, not the display name.
+A successful delete returns HTTP 204.
 
-### "Invalid resource type"
+## 11. Troubleshooting
 
-Fetch valid resource type IDs for the service type you are provisioning:
+| Problem | Cause | Resolution |
+|---|---|---|
+| "Repo not found" on privateGit | Provider not connected, or repo not authorized | Run `GET /git/providers`. Re-connect or grant repo access in the Sevalla dashboard. |
+| 400 — missing required field | Schema mismatch | Inspect the actual body shape via `mcp__sevalla__search`. Field names are precise (`domain_name`, not `name`; `target_id`/`target_type`, not `app_id`). |
+| 400 with `company_id` in error | API key already scopes to a company | Remove `company_id` from the body. |
+| 400 on database create | Missing `db_name` / `db_password` | Both are required even though the dashboard hides them. |
+| Docker image fails to start | Wrong architecture | Rebuild with `--platform linux/amd64`. |
+| "Invalid resource type" | Hard-coded or stale ID | Refresh from `GET /resources/process-resource-types` or `/database-resource-types`. |
 
-- For application pods: `GET /resources/process-resource-types`
-- For databases: `GET /resources/database-resource-types`
-
-### Docker image architecture
-
-Docker images must be built for the `linux/amd64` architecture. Images built on Apple Silicon (ARM64) will fail. Build with the `--platform linux/amd64` flag:
-
-```
-docker build --platform linux/amd64 -t myapp:latest .
-```
-
-### Missing required fields
-
-All create operations require `company_id`. The `project_id` field is optional — omit it to create resources without a project. If you receive a 400 error about missing fields, verify `company_id` is included in the request body.
-
-### After creating any resource
-
-Always report the returned `id` to the user. They will need it for subsequent operations such as deploying, configuring environment variables, or connecting databases to applications.
-
----
-
-## Delete Resources
-
-**Always confirm with the user before deleting any resource. Deletion is irreversible.**
-
-### Delete Application
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "DELETE", path: "/applications/APP_ID" })
-  return { status: res.status }
-}
-```
-
-### Delete Database
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "DELETE", path: "/databases/DB_ID" })
-  return { status: res.status }
-}
-```
-
-### Delete Static Site
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "DELETE", path: "/static-sites/STATIC_SITE_ID" })
-  return { status: res.status }
-}
-```
-
-### Delete Object Storage Bucket
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "DELETE", path: "/object-storage/BUCKET_ID" })
-  return { status: res.status }
-}
-```
-
-### Delete Project
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "DELETE", path: "/projects/PROJECT_ID" })
-  return { status: res.status }
-}
-```
-
-A successful delete returns HTTP 204 (No Content).
+After any successful create, report the returned `id`. The user will need it for env vars, deploys, scaling, and connections.

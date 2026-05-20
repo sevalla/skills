@@ -1,172 +1,115 @@
-# Operations & Troubleshooting Reference
+# Operate — Logs, Metrics, Backups, Troubleshooting
 
-This reference covers monitoring, logs, metrics, backups, and troubleshooting for applications, databases, and static sites on Sevalla.
+Monitor, debug, and run housekeeping on running resources.
 
 ## 1. Runtime Logs
 
-Application stdout/stderr output. Use this to see application-level log messages, errors, and debug output.
+Application stdout/stderr.
 
 **GET /applications/{id}/runtime-logs**
 
+| Query | Type | Notes |
+|---|---|---|
+| `from` | ISO 8601 (`...Z`) | Defaults to 1 hour ago |
+| `to` | ISO 8601 (`...Z`) | Defaults to now |
+| `filters` | string | JSON-encoded array of `{ key, operator, value | values }`. Example: `[{"key":"severity","operator":"EQUALS","value":"ERROR"}]` |
+| `limit` | integer | Default 1000, max 5000 |
+
 ```js
 async () => {
+  const now = new Date().toISOString()
+  const oneHourAgo = new Date(Date.now() - 3600_000).toISOString()
   const res = await sevalla.request({
     method: "GET",
     path: "/applications/APP_ID/runtime-logs",
-    query: { from: "2026-03-01T00:00:00Z", to: "2026-03-02T00:00:00Z", limit: 500 }
+    query: { from: oneHourAgo, to: now, limit: 500 }
   })
   return res.body
 }
 ```
 
-Returns log entries with timestamps. Each entry includes the process name, log level, and message content.
-
-**Query parameters:**
-- `from` — ISO 8601 start time (default: 1 hour ago)
-- `to` — ISO 8601 end time (default: now)
-- `filters` — JSON-encoded array of filter objects with `key`, `operator`, `value`/`values`
-- `limit` — integer, default 1000, max 5000
-
 ## 2. Access Logs
 
-HTTP request logs showing incoming traffic to the application. Each entry includes the HTTP method, request path, status code, and response time.
+HTTP request logs (method, path, status, response time, geography).
 
-**GET /applications/{id}/access-logs**
+**GET /applications/{id}/access-logs** — same query params as runtime logs.
 
 ```js
 async () => {
   const res = await sevalla.request({
     method: "GET",
     path: "/applications/APP_ID/access-logs",
-    query: { from: "2026-03-01T00:00:00Z", to: "2026-03-02T00:00:00Z", limit: 500 }
+    query: {
+      filters: JSON.stringify([{ key: "status_code", operator: "GREATER_THAN_OR_EQUALS", value: 500 }]),
+      limit: 500
+    }
   })
   return res.body
 }
 ```
 
-Use access logs to identify 4xx/5xx error patterns, slow endpoints, and traffic volume.
+Static sites: `GET /static-sites/{id}/access-logs` (identical schema).
 
-**Query parameters:**
-- `from` — ISO 8601 start time (default: 1 hour ago)
-- `to` — ISO 8601 end time (default: now)
-- `filters` — JSON-encoded array of filter objects with `key`, `operator`, `value`/`values`
-- `limit` — integer, default 1000, max 5000
+## 3. Deployment (Build) Logs
 
-## 3. Deployment Logs
+**GET /applications/{id}/deployments/{deployment_id}/logs** — same query params as runtime logs. For static sites: `GET /static-sites/{id}/deployments/{deployment_id}/logs`.
 
-Build-time logs showing each step of the build process. Useful for diagnosing build failures.
-
-**GET /applications/{id}/deployments/{deployment_id}/logs**
+Fetch the latest deployment first if you don't have its ID:
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/deployments/DEPLOYMENT_ID/logs" })
-  return res.body
-}
-```
-
-**Query parameters:**
-- `from` — ISO 8601 start time (default: 1 hour ago)
-- `to` — ISO 8601 end time (default: now)
-- `filters` — JSON-encoded array of filter objects with `key`, `operator`, `value`/`values`
-- `limit` — integer, default 1000, max 5000
-
-To find the deployment ID, fetch the latest deployment first:
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/applications/APP_ID/deployments", query: { limit: 1 } })
-  return res.body
-}
+async () => (await sevalla.request({
+  method: "GET",
+  path: "/applications/APP_ID/deployments",
+  query: { limit: 1 }
+})).body
 ```
 
 ## 4. Application Metrics
 
-Eight metric endpoints provide traffic and performance data for applications.
+All metrics endpoints require `start`, `end` (both ISO 8601 with `Z`), and `interval_in_seconds`.
 
-| Endpoint | What it shows |
+| Endpoint | Shows |
 |---|---|
-| GET /applications/{id}/metrics/requests-per-minute | Request rate |
-| GET /applications/{id}/metrics/response-time | Response time distribution |
-| GET /applications/{id}/metrics/response-time-avg | Average response time |
-| GET /applications/{id}/metrics/slowest-requests | Slowest request paths |
-| GET /applications/{id}/metrics/status-codes | HTTP status code breakdown |
-| GET /applications/{id}/metrics/top-status-codes | Most frequent status codes |
-| GET /applications/{id}/metrics/top-countries | Traffic by country |
-| GET /applications/{id}/metrics/top-pages | Most visited pages |
-
-All metrics endpoints require `start` (ISO 8601), `end` (ISO 8601), and `interval_in_seconds` query parameters.
-
-### Check request rate
+| `GET /applications/{id}/metrics/requests-per-minute` | Request rate |
+| `GET /applications/{id}/metrics/response-time` | Response time distribution (p50/p95/p99) |
+| `GET /applications/{id}/metrics/response-time-avg` | Average response time |
+| `GET /applications/{id}/metrics/slowest-requests` | Slowest paths |
+| `GET /applications/{id}/metrics/status-codes` | Status-code breakdown over time |
+| `GET /applications/{id}/metrics/top-status-codes` | Most frequent status codes |
+| `GET /applications/{id}/metrics/top-countries` | Traffic by country |
+| `GET /applications/{id}/metrics/top-pages` | Most-visited paths |
 
 ```js
 async () => {
-  const now = new Date()
-  const start = new Date(now - 3600000).toISOString() // 1 hour ago
-  const end = now.toISOString()
+  const end = new Date().toISOString()
+  const start = new Date(Date.now() - 3600_000).toISOString()
   const res = await sevalla.request({
     method: "GET",
     path: "/applications/APP_ID/metrics/requests-per-minute",
-    query: { start, end, interval_in_seconds: 300 }
+    query: { start, end, interval_in_seconds: 60 }
   })
   return res.body
 }
 ```
 
-### Check average response time
-
-```js
-async () => {
-  const now = new Date()
-  const start = new Date(now - 3600000).toISOString() // 1 hour ago
-  const end = now.toISOString()
-  const res = await sevalla.request({
-    method: "GET",
-    path: "/applications/APP_ID/metrics/response-time-avg",
-    query: { start, end, interval_in_seconds: 300 }
-  })
-  return res.body
-}
-```
-
-### Check status code breakdown
-
-```js
-async () => {
-  const now = new Date()
-  const start = new Date(now - 3600000).toISOString() // 1 hour ago
-  const end = now.toISOString()
-  const res = await sevalla.request({
-    method: "GET",
-    path: "/applications/APP_ID/metrics/status-codes",
-    query: { start, end, interval_in_seconds: 300 }
-  })
-  return res.body
-}
-```
+Static sites expose the same eight endpoints under `/static-sites/{id}/metrics/...`.
 
 ## 5. Process Metrics
 
-Per-process resource usage metrics. Requires both the application ID and the process ID.
-
-| Endpoint | What it shows |
+| Endpoint | Shows |
 |---|---|
-| GET /applications/{id}/processes/{process_id}/metrics/cpu-usage | CPU usage (millicores) |
-| GET /applications/{id}/processes/{process_id}/metrics/cpu-limit | CPU limit |
-| GET /applications/{id}/processes/{process_id}/metrics/memory-usage | Memory usage (MB) |
-| GET /applications/{id}/processes/{process_id}/metrics/memory-limit | Memory limit |
-| GET /applications/{id}/processes/{process_id}/metrics/instance-count | Running instances |
-
-All metrics endpoints require `start` (ISO 8601), `end` (ISO 8601), and `interval_in_seconds` query parameters.
-
-### Check CPU and memory together
+| `GET /applications/{id}/processes/{process_id}/metrics/cpu-usage` | CPU usage (millicores) |
+| `GET /applications/{id}/processes/{process_id}/metrics/cpu-limit` | CPU limit |
+| `GET /applications/{id}/processes/{process_id}/metrics/memory-usage` | Memory usage (MiB) |
+| `GET /applications/{id}/processes/{process_id}/metrics/memory-limit` | Memory limit |
+| `GET /applications/{id}/processes/{process_id}/metrics/instance-count` | Running instances |
+| `GET /applications/{id}/processes/{process_id}/metrics/exit-codes` | Exit-code history (useful for crash loops) |
 
 ```js
 async () => {
-  const now = new Date()
-  const start = new Date(now - 3600000).toISOString() // 1 hour ago
-  const end = now.toISOString()
-  const query = { start, end, interval_in_seconds: 300 }
+  const end = new Date().toISOString()
+  const start = new Date(Date.now() - 3600_000).toISOString()
+  const query = { start, end, interval_in_seconds: 60 }
   const [cpu, cpuLimit, mem, memLimit] = await Promise.all([
     sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/cpu-usage", query }),
     sevalla.request({ method: "GET", path: "/applications/APP_ID/processes/PROCESS_ID/metrics/cpu-limit", query }),
@@ -179,207 +122,120 @@ async () => {
 
 ## 6. Database Metrics
 
-Resource usage metrics for managed database instances.
-
-| Endpoint | What it shows |
+| Endpoint | Shows |
 |---|---|
-| GET /databases/{id}/metrics/cpu-usage | CPU usage |
-| GET /databases/{id}/metrics/cpu-limit | CPU limit |
-| GET /databases/{id}/metrics/memory-usage | Memory usage |
-| GET /databases/{id}/metrics/memory-limit | Memory limit |
-| GET /databases/{id}/metrics/storage-usage | Storage used |
-| GET /databases/{id}/metrics/storage-limit | Storage limit |
+| `GET /databases/{id}/metrics/cpu-usage` | CPU usage |
+| `GET /databases/{id}/metrics/cpu-limit` | CPU limit |
+| `GET /databases/{id}/metrics/memory-usage` | Memory usage |
+| `GET /databases/{id}/metrics/memory-limit` | Memory limit |
+| `GET /databases/{id}/metrics/storage-usage` | Storage used |
+| `GET /databases/{id}/metrics/storage-limit` | Storage limit |
+| `GET /databases/{id}/metrics/used-storage` | Used storage (alt) |
+| `GET /databases/{id}/metrics/all-storage` | Combined storage view |
 
-All metrics endpoints require `start` (ISO 8601), `end` (ISO 8601), and `interval_in_seconds` query parameters.
-
-```js
-async () => {
-  const now = new Date()
-  const start = new Date(now - 3600000).toISOString() // 1 hour ago
-  const end = now.toISOString()
-  const query = { start, end, interval_in_seconds: 300 }
-  const [storageUsed, storageLimit] = await Promise.all([
-    sevalla.request({ method: "GET", path: "/databases/DB_ID/metrics/storage-usage", query }),
-    sevalla.request({ method: "GET", path: "/databases/DB_ID/metrics/storage-limit", query })
-  ])
-  return { storageUsed: storageUsed.body, storageLimit: storageLimit.body }
-}
-```
+All require `start`, `end`, `interval_in_seconds`.
 
 ## 7. Database Backups
 
-Sevalla provides automatic daily backups (7-day retention) and manual backups (14-day retention, max 5 per database).
+Daily automatic backups (7-day retention). Manual backups (14-day retention, up to 5 per database).
 
-| Operation | Method | Endpoint |
-|---|---|---|
-| List backups | GET | /databases/{id}/backups |
-| Create manual backup | POST | /databases/{id}/backups |
-| Restore from backup | POST | /databases/{id}/backups/{backup_id}/restore |
-| Delete backup | DELETE | /databases/{id}/backups/{backup_id} |
-
-### List backups
+| Action | Method | Path | Body |
+|---|---|---|---|
+| List | GET | `/databases/{id}/backups` | query `?type=daily\|manual` (optional filter) |
+| Create manual | POST | `/databases/{id}/backups` | `{ display_name }` (required) |
+| Restore | POST | `/databases/{id}/backups/{backup_id}/restore` | — |
+| Delete | DELETE | `/databases/{id}/backups/{backup_id}` | — |
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "GET", path: "/databases/DB_ID/backups" })
-  return res.body
-}
+async () => (await sevalla.request({
+  method: "POST",
+  path: "/databases/DB_ID/backups",
+  body: { display_name: "Pre-migration snapshot" }
+})).body
 ```
 
-### Create a manual backup
+**Restoring overwrites current database contents.** Always confirm with the user first.
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "POST", path: "/databases/DB_ID/backups", body: {} })
-  return res.body
-}
-```
-
-### Restore from backup
-
-**DESTRUCTIVE: Always confirm with the user before restoring.** This overwrites the current database contents with the backup data.
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "POST", path: "/databases/DB_ID/backups/BACKUP_ID/restore", body: {} })
-  return res.body
-}
-```
-
-### Delete a backup
-
-```js
-async () => {
-  const res = await sevalla.request({ method: "DELETE", path: "/databases/DB_ID/backups/BACKUP_ID" })
-  return res.body
-}
+async () => (await sevalla.request({
+  method: "POST",
+  path: "/databases/DB_ID/backups/BACKUP_ID/restore"
+})).body
 ```
 
 ## 8. Suspend & Activate
 
-Stop all processes to save costs when a service is not in use.
+Stop all processes to save costs. Confirm with the user first.
 
-| Operation | Method | Endpoint |
+| Action | Method | Path |
 |---|---|---|
-| Suspend application | POST | /applications/{id}/suspend |
-| Activate application | POST | /applications/{id}/activate |
-| Suspend database | POST | /databases/{id}/suspend |
-| Activate database | POST | /databases/{id}/activate |
-
-**Always confirm suspend/activate with the user.** Suspending stops all running processes and makes the service unavailable. Activating restarts the service.
+| Suspend app | POST | `/applications/{id}/suspend` |
+| Activate app | POST | `/applications/{id}/activate` |
+| Suspend database | POST | `/databases/{id}/suspend` |
+| Activate database | POST | `/databases/{id}/activate` |
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "POST", path: "/applications/APP_ID/suspend", body: {} })
-  return res.body
-}
+async () => (await sevalla.request({
+  method: "POST",
+  path: "/applications/APP_ID/suspend"
+})).body
 ```
 
-## 9. Database Password Reset
+## 9. Reset Database Password
 
-Reset the admin password for a managed database. The new password is returned in the response.
-
-**POST /databases/{id}/reset-password**
-
-**Always confirm with the user before resetting.** Connected applications will need their environment variables updated with the new credentials.
+**POST /databases/{id}/reset-password** — requires `{ new_password }` in the body. Connected apps will need their env vars updated. Confirm with the user first.
 
 ```js
-async () => {
-  const res = await sevalla.request({ method: "POST", path: "/databases/DB_ID/reset-password", body: {} })
-  return res.body
-}
+async () => (await sevalla.request({
+  method: "POST",
+  path: "/databases/DB_ID/reset-password",
+  body: { new_password: "STRONG-PW-here" }
+})).body
 ```
 
 ## 10. Web Terminal
 
-Opens a WebSocket terminal session to a running process container.
+**GET /applications/{id}/processes/{process_id}/terminal** — opens a WebSocket terminal into a running container. Supports `sh`, `bash`, `dash`, `ksh`, `zsh`, `csh`, `tcsh`. Files outside persistent storage paths are lost on redeploy.
 
-**GET /applications/{id}/processes/{process_id}/terminal**
+When using the MCP server, this endpoint returns connection metadata — the actual shell session needs a WebSocket client. From `sevalla-api.sh` it is not directly usable; open it from the Sevalla dashboard.
 
-Supports `sh`, `bash`, `dash`, `ksh`, `zsh`, `csh`, and `tcsh` shells. The terminal connects directly to the running container.
+## 11. Trigger Cron Job Manually
 
-**Important:** Files created outside persistent storage paths are lost on redeployment. Use persistent storage for any data that must survive deployments.
+**POST /applications/{id}/processes/{process_id}/trigger** — runs a `cron` process now as a one-off, outside its schedule. No body.
 
-## 11. Trigger Cron Job
+## 12. Troubleshooting Triage
 
-Manually trigger a cron job process outside its regular schedule.
+### Build failure
 
-**POST /applications/{id}/processes/{process_id}/trigger**
+1. `GET /applications/{id}/deployments?limit=1` — confirm `status: "failed"`.
+2. `GET /applications/{id}/deployments/{deployment_id}/logs` — read the build log.
+3. Common causes: missing dependency, wrong runtime version, Dockerfile syntax, wrong `build_path` (see `references/deploy.md`).
+4. Fix source, redeploy.
 
-```js
-async () => {
-  const res = await sevalla.request({ method: "POST", path: "/applications/APP_ID/processes/PROCESS_ID/trigger", body: {} })
-  return res.body
-}
-```
+### Runtime crash / crash loop
 
-The process must be of type `cron`. This runs the job immediately as a one-off execution.
-
-## 12. Static Site Metrics
-
-Static sites support the same 8 metric endpoints as applications, under the `/static-sites/{id}/metrics/` path.
-
-| Endpoint | What it shows |
-|---|---|
-| GET /static-sites/{id}/metrics/requests-per-minute | Request rate |
-| GET /static-sites/{id}/metrics/response-time | Response time distribution |
-| GET /static-sites/{id}/metrics/response-time-avg | Average response time |
-| GET /static-sites/{id}/metrics/slowest-requests | Slowest request paths |
-| GET /static-sites/{id}/metrics/status-codes | HTTP status code breakdown |
-| GET /static-sites/{id}/metrics/top-status-codes | Most frequent status codes |
-| GET /static-sites/{id}/metrics/top-countries | Traffic by country |
-| GET /static-sites/{id}/metrics/top-pages | Most visited pages |
-
-## 13. Static Site Access Logs
-
-**GET /static-sites/{id}/access-logs**
-
-Supports the same query parameters as application access logs (`from`, `to`, `filters`, `limit`).
-
-```js
-async () => {
-  const res = await sevalla.request({
-    method: "GET",
-    path: "/static-sites/SITE_ID/access-logs",
-    query: { from: "2026-03-01T00:00:00Z", to: "2026-03-02T00:00:00Z", limit: 500 }
-  })
-  return res.body
-}
-```
-
-## 14. Troubleshooting Triage
-
-### Build failures
-
-1. Get the latest deployment: `GET /applications/{id}/deployments?limit=1`
-2. Check the deployment `status` field — if `"failed"`, fetch deployment logs (section 3).
-3. Common causes: missing dependencies in `package.json` or `requirements.txt`, wrong runtime version, Dockerfile syntax errors, incorrect build command.
-4. Fix the source code and redeploy (see `references/deploy.md`).
-
-### Runtime crashes
-
-1. Check runtime logs (section 1) for error messages and stack traces.
-2. Check process metrics (section 5) — high memory usage near the limit indicates a possible OOM kill.
-3. If OOM: increase the pod size (see `references/configure.md`) or fix the memory leak in application code.
-4. If crash loop: check liveness probe settings — the probe may be failing before the app finishes starting. Increase the `initial_delay_seconds` or adjust the probe path.
+1. Runtime logs (section 1) for stack traces.
+2. `GET /applications/{id}/processes/{process_id}/metrics/exit-codes` to see how the process is dying.
+3. Memory metrics (section 5) — near the limit ⇒ OOM. Increase pod size or fix the leak.
+4. If the app dies before serving traffic, the liveness probe may be too aggressive — raise `initialDelaySeconds` or adjust the path (see `references/configure.md`).
 
 ### Slow responses
 
-1. Check the `response-time-avg` metric (section 4) to confirm the problem.
-2. Check `slowest-requests` to identify which paths are bottlenecks.
-3. Check CPU usage (section 5) — if near the limit, scale up the pod size or add replicas (see `references/configure.md`).
-4. Check database metrics (section 6) if the application is database-heavy — slow queries or high DB CPU can cause slow responses.
+1. `metrics/response-time-avg` to confirm.
+2. `metrics/slowest-requests` to find the bottleneck paths.
+3. CPU metrics (section 5) — scale up or out if saturated (see `references/configure.md`).
+4. DB CPU/memory (section 6) and slow query check if DB-bound.
 
-### Database issues
+### Database
 
-1. Check `storage-usage` vs `storage-limit` — if near the limit, resize the database (see `references/configure.md`).
-2. Check CPU and memory metrics for the database (section 6).
-3. List backups (section 7) — verify automatic daily backups are running as expected.
-4. If data is corrupted: restore from the latest backup (section 7). **Always confirm with the user before restoring.**
+1. `storage-usage` vs `storage-limit` — resize if near full.
+2. CPU/memory metrics.
+3. Verify automatic backups exist (section 7).
+4. On corruption: restore from the latest backup — **confirm with the user**.
 
-### 502/503 errors
+### 502 / 503
 
-1. Check if the application is deployed and running — it may be suspended (section 8). Activate it if needed.
-2. Check health check configuration — readiness and liveness probes may be misconfigured (see `references/configure.md`).
-3. Check runtime logs (section 1) for startup failures or binding errors.
-4. Verify the application listens on the correct `PORT` environment variable. Sevalla injects `PORT` automatically; the app must bind to `0.0.0.0:$PORT`.
+1. Verify the app isn't suspended (section 8); activate if needed.
+2. Check readiness/liveness probe paths in `PATCH /applications/{id}/processes/{process_id}` (see `references/configure.md`).
+3. Runtime logs for binding errors. The app **must** listen on `0.0.0.0:$PORT` — `$PORT` is injected by Sevalla.
+4. If the app just deployed, the readiness probe may not have passed yet — wait or relax the probe.
