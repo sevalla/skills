@@ -132,11 +132,12 @@ and setup. "Fully passed" counts runs where every grader passed. Per case:
 
 | Model | With the skill | MCP server alone |
 | --- | --- | --- |
-| Claude Sonnet | 1.00, 33 of 33 runs fully passed | 0.87, 24 of 33 |
-| Claude Haiku | 0.98, 31 of 33 | 0.88, 25 of 33 |
+| Claude Sonnet | 0.98, 31 of 33 runs fully passed | 0.84, 23 of 33 |
+| Claude Haiku | 0.97, 30 of 33 | 0.92, 27 of 33 |
 
-Without the skill, agents most often add a custom domain to an app on the Hobby size, which
-doesn't support one, and skip the migration job on a first deploy.
+Without the skill, agents most often skip the migration job on a first deploy, try a custom
+domain on the Hobby size without offering a bigger one, and wait for a static site's first build
+that never started.
 
 ## License
 

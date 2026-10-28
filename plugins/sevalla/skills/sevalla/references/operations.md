@@ -95,9 +95,10 @@ returns its secret URL to you: let the user do it on the app's **Settings** tab 
 
 ## Databases
 
-Connecting a database to an app goes through `createApplicationInternalConnectionV3` above, or
-`create_database` with `connect_to_application_id` for a new one. The database-side connection
-operation belongs to `create_database`, which creates a new, billed database.
+Connect an existing database to an app with `createApplicationInternalConnectionV3` above, or from
+the database's side with `createDatabaseInternalConnectionV3` (`target_type: "app"`), both on
+`sevalla_api_create`. For a new database, `create_database` with `connect_to_application_id` does
+both at once.
 
 | Task | Operation ID | Tool |
 | --- | --- | --- |

@@ -28,9 +28,8 @@ no build error.)
 
 ## Build
 
-`get_deployment_logs`. The last 100 lines usually show the cause; `search` narrows to the text of
-an error. Don't use `errors_only`: build output on stderr counts as errors, so it returns hundreds
-of normal lines.
+`get_deployment_logs`. The last 100 lines usually show the cause; `errors_only` keeps the lines
+that mention an error, and `search` narrows to the text of one.
 
 | The log says | Fix |
 | --- | --- |
@@ -118,12 +117,12 @@ checks again now; Sevalla also checks every 30 minutes for 7 days.
 
 | Problem | Fix |
 | --- | --- |
-| A custom domain on an app whose web process is `h1` | Custom domains don't work with `h1`: a bigger size with `scale_process` (it costs more: ask) |
+| `Custom domains are not available while the web process uses a hobby instance size.` | Custom domains don't work with `h1`: a bigger size with `scale_process` (it costs more: ask), then add the domain |
 | `Cannot create hobby process because app has custom domain` | A process change keeps or moves the web process to `h1` while the app has a custom domain: keep a bigger size, or remove the domain first |
 | Stays in verification | An old `A` or `CNAME` record still on the name; a doubled record name (`shop.example.com.example.com`); old `_acme-challenge` records; a proxied (orange cloud) Cloudflare record |
 | Verification timed out after 7 days | Delete the domain and add it again: every attempt gets new record values |
 | SSL won't issue | A `CAA` record that doesn't allow Sevalla's certificate authority: add `0 issue "pki.goog"` |
-| Adding fails with a `500` | Often the domain is already on another Sevalla service: remove it there first |
+| `409` `Domain already exists` | The domain is on another Sevalla service: remove it there first |
 | Can't add any custom domain | The company needs a payment method or credits |
 
 ## Static sites

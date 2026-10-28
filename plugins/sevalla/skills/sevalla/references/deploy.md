@@ -96,7 +96,7 @@ the app still points wherever it pointed before. Provisioning takes a few minute
 `get_database` shows `ready` before you deploy. The app reads the URL from its next deployment on.
 
 **An existing database** for an app: the agent can't build its URL, because no tool returns the
-database's user or password. Ask the user to connect them on the database's **Networking** tab:
+database's password. Ask the user to connect them on the database's **Networking** tab:
 **Add internal connection**, with **Add environment variables to the application** turned on. That
 writes the variables without the password passing through you. `resetDatabasePasswordV3` is the
 last resort: the database is unavailable for a few minutes, and every app using it breaks until
@@ -144,8 +144,8 @@ active. Then request `/` and one route that reads from the database.
 
 `create_static_site` with `display_name`, `repo_url`, `default_branch`, and set the build
 yourself: `build_command`, `published_directory` (`dist`, `build`, `out`, `public`),
-`node_version` (needed whenever a build runs, for example `22`; static sites ignore
-`engines.node`), `install_command`, and `root_directory` for a monorepo. Without a
+`node_version` (required whenever there is a build or install command: `16`, `18`, `20`, `22`,
+`lts` or `latest`; static sites ignore `engines.node`), `install_command`, and `root_directory` for a monorepo. Without a
 `build_command`, nothing is built and the repository's files are published as they are. Then
 check `list_deployments`: if no deployment started, start one with `trigger_deployment`. The
 site's address is `https://<name>.sevalla.page`, in `get_static_site`.

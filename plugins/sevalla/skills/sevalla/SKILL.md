@@ -2,7 +2,7 @@
 name: sevalla
 description: Deploys and operates web apps, APIs, workers, cron jobs, static sites and managed databases (PostgreSQL, MySQL, MariaDB, Redis, Valkey) on Sevalla. Use it for every Sevalla task, including quick ones, and before any change to a Sevalla account - deploying, deleting, restoring a backup, cloning, scaling, suspending, adding a domain, setting variables or keys - because it holds the safety checks and platform facts the Sevalla tools don't state. Also use it to debug failed builds, crashes, logs, metrics or a broken domain on Sevalla, whenever the user mentions Sevalla, a sevalla.app or sevalla.page address or an app.sevalla.com link, uses the Sevalla MCP tools or the sevalla CLI, or asks to deploy or host a project while Sevalla tools are connected. Works for any framework or Dockerfile, through the Sevalla MCP server, the sevalla CLI or the REST API.
 license: MIT
-compatibility: The Sevalla MCP server (https://mcp.sevalla.com/mcp), or the sevalla CLI (@sevalla/cli, Node.js 24+), or the Sevalla REST API with an API key.
+compatibility: The Sevalla MCP server (https://mcp.sevalla.com/mcp), or the sevalla CLI (@sevalla/cli 2.0 or later, Node.js 24+), or the Sevalla REST API with an API key.
 metadata:
   author: Sevalla
   version: "2.0.0"
@@ -60,9 +60,10 @@ Use the first one available. Docs order: MCP server, then CLI, then REST API.
    `sevalla_api_update`, even when their ID starts with `create`.
    [references/operations.md](references/operations.md) lists the IDs and tools you will need
    most, so you can skip the search.
-2. **The `sevalla` CLI**, if `sevalla api-keys validate --json` succeeds. Add `--json` to every
-   command. Don't guess flags: `sevalla schema apps.create` prints the exact arguments of any
-   command. The CLI never asks for confirmation. See [references/cli.md](references/cli.md).
+2. **The `sevalla` CLI** (2.0 or later), if `sevalla auth status --json` reports a valid sign-in.
+   Add `--json` to every command. Don't guess flags: `sevalla schema apps.create` prints the exact
+   arguments of any command. Irreversible commands refuse to run without `--confirm`: pass it only
+   after the user agreed. See [references/cli.md](references/cli.md).
 3. **The REST API**: `https://api.sevalla.com/v3` with `Authorization: Bearer $SEVALLA_API_TOKEN`
    from the environment. Spec: https://api.sevalla.com/v3/openapi.json.
 
@@ -166,9 +167,10 @@ once.
 | Variable change has no effect | `list_deployments` | Variables apply at the next deployment |
 | Custom domain not working | `get_application` (web process size, DNS records, verification errors) | An `h1` web process (custom domains don't work with it), DNS records missing, a CAA record |
 
-Don't filter build or runtime logs with `errors_only` or `severity: "ERROR"`: everything written
-to stderr counts as an error, so these return pages of normal output. Use `search` with the
-error text instead. The full triage: [references/troubleshooting.md](references/troubleshooting.md).
+`errors_only` on `get_deployment_logs` keeps the lines that mention an error, which usually holds
+the cause. Don't filter runtime logs with `severity: "ERROR"`: it includes everything written to
+stderr. Use `search` with the error text instead. The full triage:
+[references/troubleshooting.md](references/troubleshooting.md).
 
 ## References
 

@@ -1,1 +1,1 @@
-{"total":1,"deployments":[{"id":"77777777-0000-4000-8000-000000000001","status":"success","type":"manual","trigger":"MANUAL_DEPLOY","branch":"main","commit":"1a2b3c4","commit_message":"Landing page","created_at":"2026-10-28T06:02:00.000Z","started_at":"2026-10-28T06:02:05.000Z","finished_at":"2026-10-28T06:24:10.000Z"}]}
+{"total":0,"deployments":[]}

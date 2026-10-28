@@ -1,0 +1,1 @@
+{"deployment":{"id":"77777777-0000-4000-8000-000000000001","status":"waiting","type":"manual","trigger":"MANUAL_DEPLOY","branch":"main","created_at":"2026-10-28T06:02:00.000Z"},"next":"get_deployment reports progress."}

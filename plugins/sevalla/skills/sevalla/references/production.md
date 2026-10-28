@@ -35,9 +35,10 @@ https://docs.sevalla.com/applications/go-live-checklist.md):
 
 Before `add_domain`, check the web process's size in `get_application`. Custom domains don't work
 with an `h1` web process, and need a company with a payment method or credits. Move the process
-to a bigger size first, after the user agrees to the cost. The dashboard refuses a domain on `h1`
-but the API doesn't check; once an app has a custom domain, every change that keeps its web
-process on `h1` fails with `Cannot create hobby process because app has custom domain`.
+to a bigger size first, after the user agrees to the cost. On `h1`, adding a domain fails with
+`Custom domains are not available while the web process uses a hobby instance size.`, and once an
+app has a custom domain, moving its web process to `h1` fails with
+`Cannot create hobby process because app has custom domain`.
 
 `add_domain` with the domain (`wildcard: true` for all subdomains) returns the DNS records to
 create at the user's DNS provider: an ownership `TXT` record (`_cf-custom-hostname`), an SSL
@@ -74,8 +75,8 @@ CPU optimized and Memory optimized. Offer `h1` only for hobby projects without a
 
 Probes go on the web process with `updateProcessV3` and take effect at the next deployment:
 `readiness_probe` sends traffic only to ready instances, which makes rollouts zero-downtime;
-`liveness_probe` restarts an instance that hangs. Only `httpGet` probes are kept; a `tcpSocket`
-or `exec` probe is accepted and then silently dropped.
+`liveness_probe` restarts an instance that hangs. Only `httpGet` probes are supported; the API
+refuses `tcpSocket` and `exec` probes with a `400`.
 
 ```json
 {
@@ -90,7 +91,8 @@ or `exec` probe is accepted and then silently dropped.
 ```
 
 `port` defaults to the process's own port; set it only if the health endpoint listens elsewhere.
-Set `timeoutSeconds`: left out, the platform waits far longer than a health check should. Probe an
+Set `timeoutSeconds`: left out, it defaults to 120 seconds, far longer than a health check should
+wait. Probe an
 endpoint that doesn't depend on third-party services, so one outage elsewhere doesn't restart
 every instance.
 
@@ -128,10 +130,9 @@ Which kind a database has depends on its location's cloud:
   (`createDatabaseBackupTargetV3`, `createDatabaseExternalBackupV3`). A database without a backup
   target has no backups at all. Manual snapshot backups return `400` there.
 
-`createDatabaseBackupV3` answers `202` before the backup runs, and the backup is skipped without
-an error when 5 manual backups already exist, the database isn't ready, or another backup is
-running. Wait until `get_database` lists the new backup before relying on it; with 5 manual
-backups, delete one first.
+`createDatabaseBackupV3` answers `202` when the backup starts, and `400` when it can't: 5 manual
+backups already exist (delete one first), the database isn't ready, or another backup is running.
+The backup runs in the background: wait until `get_database` lists it before relying on it.
 
 **Restoring replaces all the data** written since the backup. A snapshot restore makes the
 database briefly unavailable; a dump restore keeps it down for the whole restore. Before a

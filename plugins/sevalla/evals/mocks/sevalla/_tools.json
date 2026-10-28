@@ -65,7 +65,7 @@
     {
       "name": "get_application",
       "title": "Get Sevalla application",
-      "description": "Returns a Sevalla application with its processes (web, worker, cron, job) and their scaling, domains with DNS records and verification errors, and latest deployment. History: list_deployments. Logs: search_runtime_logs, get_deployment_logs.",
+      "description": "Returns a Sevalla application with its processes (web, worker, cron, job) with scaling, probes, disks and job timing, domains with DNS records and verification errors, and latest deployment. History: list_deployments. Logs: search_runtime_logs, get_deployment_logs.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -296,7 +296,7 @@
     {
       "name": "get_deployment",
       "title": "Get Sevalla deployment",
-      "description": "Returns a deployment of a Sevalla application or static site: status, steps, branch, commit, image, build error and timing. It reports the progress of deployments started by trigger_deployment or rollback_deployment. Output: get_deployment_logs.",
+      "description": "Returns a deployment of a Sevalla application or static site: status, steps, branch, commit, image and timing. It reports the progress of deployments started by trigger_deployment or rollback_deployment. Output and failure causes: get_deployment_logs.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -355,7 +355,7 @@
     {
       "name": "get_deployment_logs",
       "title": "Get Sevalla deployment logs",
-      "description": "Returns the build and rollout log of a deployment of a Sevalla application or static site, one line per entry, by default the last 100 lines. errors_only keeps lines with an error severity or mentioning errors, failures or exceptions. Running application logs: search_runtime_logs.",
+      "description": "Returns the build and rollout log of a deployment of a Sevalla application or static site, one line per entry, by default the last 100 lines. errors_only keeps lines mentioning errors, failures or exceptions. Running application logs: search_runtime_logs.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -502,7 +502,7 @@
     {
       "name": "rollback_deployment",
       "title": "Roll back Sevalla service",
-      "description": "Rolls a Sevalla application or static site back to an earlier successful deployment, reusing its build. Applications return to their most recent successful deployment; static sites to deployment_id or, by default, the last successful one before the current. get_deployment reports progress.",
+      "description": "Rolls a Sevalla application or static site back to an earlier successful deployment. Applications redeploy the build of their most recent successful one. Static sites rebuild the commit of deployment_id or, by default, of the last successful one before the current, with the current settings and variables. get_deployment reports progress.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -571,7 +571,7 @@
             "type": "string"
           },
           "severity": {
-            "description": "Only entries with this severity.",
+            "description": "Only this severity; ERROR includes all stderr output.",
             "type": "string",
             "enum": [
               "DEBUG",
@@ -1271,7 +1271,7 @@
     {
       "name": "create_static_site",
       "title": "Create Sevalla static site",
-      "description": "Creates a Sevalla static site from a Git repository and starts its first build. Omitted build settings are detected automatically.",
+      "description": "Creates a Sevalla static site from a Git repository and starts its first build.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1562,7 +1562,7 @@
     {
       "name": "sevalla_api_search",
       "title": "Search Sevalla API operations",
-      "description": "Searches all 252 operations of the Sevalla API v3 (reference: https://api-docs.sevalla.com), including those behind dedicated tools, by keywords and returns their IDs, parameters, body fields and the tool that runs each. 179 have no dedicated tool, among them the clone, suspend, cancel and promote operations. operation_id returns one operation in full. It reads the API reference, not the account.",
+      "description": "Searches all 252 operations of the Sevalla API v3 (reference: https://api-docs.sevalla.com), including those behind dedicated tools, by keywords and returns their IDs, parameters, body fields and the tool that runs each. 180 have no dedicated tool, among them the clone, suspend, cancel and promote operations. operation_id returns one operation in full. It reads the API reference, not the account.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",

@@ -1,1 +1,5 @@
-{"domain":{"id":"bbbbbbbb-bbbb-4bbb-8bbb-ffffffffffff","name":"shop.example.com","type":"CUSTOM","status":"VERIFICATION","dns_records":[{"type":"TXT","name":"_cf-custom-hostname.shop.example.com","value":"7c1e5d2a-0b4f-4f6e-9a7d-3c2b1a0f9e8d"},{"type":"TXT","name":"_acme-challenge.shop.example.com","value":"Xy3kP0qL9mN2vB7tR4wE6uI8oA1sD5fG"},{"type":"CNAME","name":"shop.example.com","value":"storefront.sevalla.app"}]},"next":"The domain becomes active once these DNS records exist and verification completes."}
+---
+error: true
+---
+
+The Sevalla API rejected the request: Custom domains are not available while the web process uses a hobby instance size. Change the web process to a larger size first..
