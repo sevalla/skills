@@ -8,6 +8,7 @@ const TOOLS_FILE = join(ROOT, 'plugins/sevalla/evals/mocks/sevalla/_tools.json')
 const MOCKS_DIR = join(ROOT, 'plugins/sevalla/evals')
 const SPEC_URL = 'https://api.sevalla.com/v3/openapi.json'
 const DOCS_INDEX_URL = 'https://docs.sevalla.com/llms.txt'
+const MCP_OPERATIONS_URL = 'https://raw.githubusercontent.com/sevalla/mcp/main/src/sevalla/operations.ts'
 const TOOL_SHAPE = /^(?:(?:list|get|create|trigger|rollback|search|set|delete|scale|add)_[a-z_]+|sevalla_api_[a-z]+)$/
 const NOT_TOOLS = new Set(['delete_stale_apps'])
 
@@ -78,8 +79,56 @@ if (skill.split('\n').length > 500) {
   fail('SKILL.md must stay under 500 lines')
 }
 
-const [spec, docsIndex] = await Promise.all([fetchText(SPEC_URL), fetchText(DOCS_INDEX_URL)])
-const operationIds = new Set([...spec.matchAll(/"operationId":\s*"([A-Za-z0-9]+)"/g)].map((m) => m[1]))
+const versions = {
+  'plugin.json': JSON.parse(readFileSync(join(ROOT, 'plugins/sevalla/.claude-plugin/plugin.json'), 'utf8')).version,
+  'SKILL.md metadata': frontmatter.match(/^\s+version: "([^"]+)"$/m)?.[1],
+  'README badge': readFileSync(join(ROOT, 'README.md'), 'utf8').match(/badge\/version-([\d.]+)-/)?.[1],
+  'CHANGELOG.md': readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8').match(/^## v([\d.]+)/m)?.[1],
+}
+if (new Set(Object.values(versions)).size !== 1) {
+  fail(`versions disagree: ${JSON.stringify(versions)}`)
+}
+
+const [spec, docsIndex, mcpOperations] = await Promise.all([
+  fetchText(SPEC_URL),
+  fetchText(DOCS_INDEX_URL),
+  fetchText(MCP_OPERATIONS_URL),
+])
+const methods = new Map<string, string>()
+for (const [path, item] of Object.entries(JSON.parse(spec).paths as Record<string, Record<string, { operationId?: string }>>)) {
+  for (const [method, op] of Object.entries(item)) {
+    if (op.operationId) {
+      methods.set(op.operationId, method.toUpperCase())
+      if (path.includes('/metrics/')) {
+        methods.set(op.operationId, 'METRIC')
+      }
+    }
+  }
+}
+const operationIds = new Set(methods.keys())
+const additive = new Set(
+  [...(mcpOperations.match(/ADDITIVE_OPERATIONS = new Set\(\[([\s\S]*?)\]\)/)?.[1] ?? '').matchAll(/'(\w+)'/g)].map((m) => m[1]),
+)
+const dedicated = new Map(
+  [...(mcpOperations.match(/DEDICATED_TOOLS[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? '').matchAll(/(\w+): '(\w+)'/g)].map((m) => [m[1], m[2]]),
+)
+if (additive.size === 0 || dedicated.size === 0) {
+  fail(`could not read the operation classes from ${MCP_OPERATIONS_URL}`)
+}
+// Mirrors classify() in the MCP server: which generic tool runs an operation, or which dedicated tool owns it.
+const toolFor = (id: string) => {
+  const method = methods.get(id)
+  if (dedicated.has(id) || method === 'METRIC') {
+    return dedicated.get(id) ?? 'get_metrics'
+  }
+  if (method === 'GET') {
+    return 'sevalla_api_read'
+  }
+  if (method === 'DELETE') {
+    return 'sevalla_api_delete'
+  }
+  return additive.has(id) ? 'sevalla_api_create' : 'sevalla_api_update'
+}
 const docPages = new Set([...docsIndex.matchAll(/https:\/\/docs\.sevalla\.com\/([^\s)]+?)\.md\b/g)].map((m) => m[1]))
 const tools = new Set<string>(JSON.parse(readFileSync(TOOLS_FILE, 'utf8')).tools.map((t: { name: string }) => t.name))
 const cli = flatten(cliSchema())
@@ -90,6 +139,21 @@ for (const [file, text] of texts) {
   for (const [, id] of text.matchAll(/\b([a-z][A-Za-z]+V3)\b/g)) {
     if (!operationIds.has(id)) {
       fail(`${rel(file)}: operation ${id} is not in ${SPEC_URL}`)
+    } else if (!toolFor(id).startsWith('sevalla_api_')) {
+      fail(`${rel(file)}: ${id} only runs through \`${toolFor(id)}\`; name that tool instead`)
+    }
+  }
+
+  for (const line of text.split('\n')) {
+    const generic = new Set(line.match(/sevalla_api_(?:read|create|update|delete)/g))
+    if (generic.size !== 1) {
+      continue
+    }
+    const [tool] = generic
+    for (const [, id] of line.matchAll(/\b([a-z][A-Za-z]+V3)\b/g)) {
+      if (operationIds.has(id) && toolFor(id) !== tool) {
+        fail(`${rel(file)}: ${id} runs on \`${toolFor(id)}\`, not \`${tool}\``)
+      }
     }
   }
 

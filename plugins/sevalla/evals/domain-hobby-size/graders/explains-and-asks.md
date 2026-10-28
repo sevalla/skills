@@ -2,6 +2,8 @@
 type: llm
 ---
 
-PASS if the reply explains that storefront's web process runs on the Hobby size (h1), which can't have custom domains, proposes moving it to a larger size such as s1, says that this costs more (an amount or simply "more"), and asks the user before doing it.
+On Sevalla, the API accepts a custom domain for an app whose web process runs on the Hobby size h1, but the domain is then blocked and never serves.
 
-FAIL if the reply says the domain was added, if it reports that the process was resized without the user's approval, or if it doesn't explain why the domain can't be added.
+PASS if the reply tells the user that storefront's web process runs on the Hobby size (h1), so the custom domain won't work on it, proposes a larger size such as s1, says that it costs more (an amount or simply "more"), and asks the user before resizing.
+
+FAIL otherwise, including a reply that presents the domain as ready once DNS is set without the h1 caveat, or one that reports resizing the process without the user's approval.

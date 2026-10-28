@@ -1,1 +1,1 @@
-{"id":"11111111-1111-4111-8111-999999999999","name":"api-staging","display_name":"api-staging","status":"deploymentInProgress","latest_deployment":{"id":"55555555-5555-4555-8555-999999999999","status":"inProgress"}}
+{"id":"11111111-1111-4111-8111-999999999999","name":"api-staging","display_name":"api-staging","status":"created","source":"privateGit","repo_url":"https://github.com/acme/api","default_branch":"main","auto_deploy":true}

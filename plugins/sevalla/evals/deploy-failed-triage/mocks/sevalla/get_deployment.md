@@ -1,1 +1,1 @@
-{"id":"55555555-5555-4555-8555-666666666666","status":"failed","branch":"main","commit":"9f2c4e1","steps":[{"name":"build","status":"success","duration_seconds":142},{"name":"rollout","status":"failed","process":"web"}],"error":"Rollout of process web failed: instances did not become ready within 20 minutes. The process was rolled back to its previous version."}
+{"id":"55555555-5555-4555-8555-666666666666","status":"failed","branch":"main","commit":"9f2c4e1","created_at":"2026-10-28T06:02:00Z","finished_at":"2026-10-28T06:24:10Z","steps":["build","deploy"]}

@@ -16,14 +16,17 @@ in [cli.md](cli.md).
 ## Applications
 
 **Git access.** `source: "privateGit"` builds through the company's GitHub, GitLab or Bitbucket
-connection. When Sevalla can't see the repository, creating the app fails (often with a `500`):
-`listGitProvidersV3` returns each installation with a `settings_url`, where the user grants access.
-`source: "publicGit"` takes any public repository URL, without automatic deployments on push.
+connection. When Sevalla can't see the repository, creating the app fails with a `400` that says
+so: `listGitProvidersV3` returns each connection's `connect_url` (and for GitHub a
+`settings_url`), where the user grants access. `source: "publicGit"` takes any public repository
+URL, without automatic deployments on push.
 
 **Create.** `create_application` with `display_name`, `cluster_id` (`get_platform_options`),
 `source`, `repo_url` and `default_branch`, and `deploy: false` so you can finish the setup first.
-It creates one web process, listening on port 8080, on size `s1` with 1 instance. A smaller size
-(`h1`, the Hobby size) is `scale_process` with its `size_id`; `h1` can't serve custom domains.
+It creates one web process, listening on port 8080, on size `s1` with 1 instance. Keep `s1` unless
+the user wants the cheaper `h1` (`scale_process` with its `size_id`) for a hobby project without a
+custom domain. Check `auto_deploy` in `get_application`, and turn it on if the user wants every
+push to deploy.
 
 **Build settings** go in `updateApplicationV3`:
 
@@ -67,26 +70,37 @@ An application has one `web` process and any number of others, sharing its build
 | `job` | A command at each deployment | `job_start_policy`: `beforeDeployment`, `afterSuccessDeployment` or `afterFailedDeployment` |
 
 Run migrations as a `beforeDeployment` job: a failed migration stops the deployment and the
-previous version keeps running. A job has about 5 minutes. Change a process's command, port,
-health checks or schedule with `updateProcessV3`; run a cron job now with `triggerProcessCronV3`.
+previous version keeps running.
+
+- A job has 10 minutes by default; `active_deadline_seconds` on the process changes it.
+- A job's own output is in the runtime logs (`search_runtime_logs` around the deployment's time).
+  The deployment log only says `<job> has failed` or `<job> has timed out after <N>s`.
+- `beforeDeployment` jobs run on every rollout, including restarts, rollbacks and `scale_process`
+  changes, so the migration command must be safe to run again (`prisma migrate deploy`,
+  `manage.py migrate`, `rails db:migrate` are).
+
+Change a process's command, port, health checks or schedule with `updateProcessV3`; run a cron job
+now with `triggerProcessCronV3`. New and changed processes take effect at the next deployment.
 
 ## Databases
 
 `create_database` with `display_name`, `type`, `cluster_id` (the app's location), `size_id`
 (`get_platform_options` with `kind: "database"`), and for an app, `connect_to_application_id`.
 It creates the database, connects it over the private network and stores the connection URL in
-the app's `DATABASE_URL` (or `env_var_name`), unless that variable already exists. The password is
-generated on the server and never returned. PostgreSQL takes `extensions`: `vector`, `postgis`,
-`cron`. `version` defaults to the newest (`listDatabaseVersionsV3` lists them).
+the app's `DATABASE_URL` (or `env_var_name`; pass `REDIS_URL` for Redis and Valkey). The password
+is generated on the server and never returned. PostgreSQL takes `extensions`: `vector`,
+`postgis`, `cron`. `version` defaults to the newest (`listDatabaseVersionsV3` lists them).
 
-Provisioning takes a few minutes: `get_database` shows when it's ready. The app reads the URL from
-its next deployment on.
+Read `connection.env_var` in the result: if the variable already existed, nothing was stored, and
+the app still points wherever it pointed before. Provisioning takes a few minutes: wait until
+`get_database` shows `ready` before you deploy. The app reads the URL from its next deployment on.
 
-**An existing database** for another app: `createApplicationInternalConnectionV3` with
-`target_type: "database"` connects them, but sets no variable. Build the URL from `get_database`
-(`internal_hostname`, `internal_port`, database name, user) and a password the user gives you. If
-nobody has it, `resetDatabasePasswordV3` sets a new one, and every app already using the old one
-loses access until its variable is updated: ask first.
+**An existing database** for an app: the agent can't build its URL, because no tool returns the
+database's user or password. Ask the user to connect them on the database's **Networking** tab:
+**Add internal connection**, with **Add environment variables to the application** turned on. That
+writes the variables without the password passing through you. `resetDatabasePasswordV3` is the
+last resort: the database is unavailable for a few minutes, and every app using it breaks until
+its variable is updated. Ask first.
 
 ## Environment variables
 
@@ -98,13 +112,15 @@ loses access until its variable is updated: ask first.
 - **Global** (`scope: "global"`): every application gets it unless it sets the same key.
 - A value can reference another variable as `${KEY}`.
 - Changes apply at the next deployment. Pass `redeploy: true`, or deploy with `restart: true` when
-  only runtime values changed. A value the build inlines needs a full deployment.
+  only runtime values changed: a restart reuses the build, so build-time values need a full
+  deployment.
 
 `list_environment_variables` shows keys and scoping, never values.
 
 ## Follow a deployment
 
-`trigger_deployment` returns a deployment. Poll `get_deployment` every 20 to 30 seconds.
+`trigger_deployment` returns a deployment. Poll `get_deployment` every 20 to 30 seconds until it
+reaches `success`, `failed`, `cancelled` or `skipped`.
 
 | Status | Meaning |
 | --- | --- |
@@ -126,18 +142,23 @@ active. Then request `/` and one route that reads from the database.
 
 ## Static sites
 
-`create_static_site` with `display_name`, `repo_url`, `default_branch`, and the build:
-`build_command`, `published_directory` (`dist`, `build`, `out`, `public`), `node_version`,
-`install_command`, `root_directory` for a monorepo. Omitted settings are detected. The first build
-starts at once; follow it with `list_deployments` and `get_deployment`. The site's address is
-`https://<name>.sevalla.page`, in `get_static_site`.
+`create_static_site` with `display_name`, `repo_url`, `default_branch`, and set the build
+yourself: `build_command`, `published_directory` (`dist`, `build`, `out`, `public`),
+`node_version` (needed whenever a build runs, for example `22`; static sites ignore
+`engines.node`), `install_command`, and `root_directory` for a monorepo. Without a
+`build_command`, nothing is built and the repository's files are published as they are. Then
+check `list_deployments`: if no deployment started, start one with `trigger_deployment`. The
+site's address is `https://<name>.sevalla.page`, in `get_static_site`.
 
 - A single-page app whose router handles paths in the browser needs a `_redirects` file in the
   publish directory with `/*    /index.html    200`. Many generators copy `public/` into the output.
 - `index_file` and `error_file` (for example `404.html`) set the pages served.
-- `is_preview_enabled: true` builds a preview for each pull request.
-- Roll back with `rollback_deployment` and an earlier `deployment_id`, without rebuilding.
-- After a deployment, `purgeStaticSiteCacheV3` clears the CDN cache if old files still show.
+- `is_preview_enabled: true` builds a preview for each pull request; `auto_deploy: true`
+  (`updateStaticSiteV3`) deploys every push.
+- `rollback_deployment` with an earlier `deployment_id` rebuilds that commit with the current
+  settings and variables.
+- Old files after a deployment are usually the browser's cache; `purgeStaticSiteCacheV3` clears
+  the CDN's.
 
 ## Docker images
 
@@ -152,9 +173,9 @@ starts at once; follow it with `list_deployments` and `get_deployment`. The site
 
 - **On push**: `auto_deploy: true` on the app (`updateApplicationV3`), or on the static site
   (`updateStaticSiteV3`). Deploy paths keep one push from deploying every app of a monorepo.
-- **Deploy hook**: `enableDeploymentHookV3` creates a secret URL that deploys the default branch
-  on a `POST`. Don't print it: the user copies it from the app's **Settings** tab into a CI
-  secret, because anyone with the URL can deploy.
+- **Deploy hook**: a secret URL that deploys the default branch on a `POST`. Anyone with the URL
+  can deploy, and creating it through the API returns it to you, so let the user turn it on on
+  the app's **Settings** tab and copy it straight into a CI secret.
 - **GitHub Actions**: `sevalla/sevalla-deploy@v2.0.0` deploys after tests pass:
 
   ```yaml
@@ -170,8 +191,8 @@ starts at once; follow it with `list_deployments` and `get_deployment`. The site
   Other actions: `deploy-static-site`, `promote-app`. Docs:
   https://docs.sevalla.com/developer-tools/github-actions.md.
 - **The key for CI** gets custom capabilities limited to the one app it deploys, not a company
-  role. The user creates it under **Tools** > **API keys**; `createApiKeyV3` returns the token only
-  once.
+  role (see [production.md](production.md#api-keys)). The user creates it under **Tools** >
+  **API keys**, so the token goes straight into the CI secret and never through you.
 
 ## Pipelines and preview apps
 
@@ -188,10 +209,12 @@ deploys its own branch.
 | Preview apps for pull requests | `enablePipelinePreviewV3` (`auto_create_app`, `delete_stale_apps`, `stale_app_days`) |
 | One preview app now | `createPipelinePreviewAppV3` with `branch` and optional `pull_request_number` |
 
-A staging app is usually `cloneApplicationV3` of production. A clone copies the processes,
-environment variables and build settings, and **its first deployment starts at once**: with the
-production `DATABASE_URL`, the clone connects to the production database, and a
-`beforeDeployment` migration job runs against it. To keep the clone off production data, check the
-source's variables and jobs with the user first. Then, right after cloning, cancel the clone's
-first deployment with `cancelDeploymentV3` (the build takes minutes, and jobs only run after it),
-point its variables at a staging database, and deploy it.
+A staging app is usually `cloneApplicationV3` of production. A clone copies the processes, the
+app's variables and its build settings, including `auto_deploy`. It doesn't copy domains,
+internal connections or disk contents, and it doesn't deploy until you deploy it, or until the
+next push to its branch if `auto_deploy` is on. Its first deployment then runs with production's
+`DATABASE_URL`, and a `beforeDeployment` migration job runs against the production database.
+Before either happens: check the source's variables and jobs with the user, set
+`auto_deploy: false` on the clone if it shares production's branch, and point its variables at a
+staging database. A clone of a Docker image app has no image yet: pass `docker_image` when you
+deploy it.

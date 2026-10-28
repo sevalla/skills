@@ -1,5 +1,1 @@
----
-error: true
----
-
-Sevalla API error 400: Custom domains aren't available on the Hobby size.
+{"domain":{"id":"bbbbbbbb-bbbb-4bbb-8bbb-ffffffffffff","name":"shop.example.com","type":"CUSTOM","status":"VERIFICATION"},"dns_records":[{"type":"TXT","name":"_cf-custom-hostname.shop","value":"7c1e5d2a-0b4f-4f6e-9a7d-3c2b1a0f9e8d"},{"type":"TXT","name":"_acme-challenge.shop","value":"Xy3kP0qL9mN2vB7tR4wE6uI8oA1sD5fG"},{"type":"CNAME","name":"shop","value":"storefront.sevalla.app"}]}
