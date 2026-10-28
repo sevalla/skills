@@ -1,0 +1,1 @@
+{"id":"66666666-6666-4666-8666-666666666666","name":"landing","display_name":"landing","status":"deployed","build_command":"npm run build","published_directory":"dist","domains":[{"name":"landing-k3j4h.sevalla.page","type":"SYSTEM","status":"ACTIVE","primary":true}],"latest_deployment":{"id":"77777777-0000-4000-8000-000000000001","status":"success"}}

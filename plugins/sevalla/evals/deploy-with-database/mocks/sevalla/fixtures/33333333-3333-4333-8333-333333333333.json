@@ -1,0 +1,1 @@
+{"id":"33333333-3333-4333-8333-333333333333","name":"main-db","display_name":"main-db","type":"postgresql","version":"17","status":"ready","size":"db-1","internal_connections":[{"target_name":"api-prod","target_type":"appResource"}]}

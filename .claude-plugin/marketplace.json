@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "sevalla-skills",
-  "description": "Sevalla agent skills for Claude Code",
+  "description": "Agent skills that teach coding agents to deploy and run applications on Sevalla.",
   "owner": {
     "name": "Sevalla",
     "email": "support@sevalla.com"
@@ -9,10 +9,10 @@
   "plugins": [
     {
       "name": "sevalla",
-      "description": "Sevalla tools for Claude Code - manage applications, databases, deployments, and infrastructure",
+      "description": "Deploy and run applications, databases and static sites on Sevalla: the Sevalla skill and the Sevalla MCP server.",
       "author": { "name": "Sevalla" },
       "source": "./plugins/sevalla",
-      "category": "productivity"
+      "category": "deployment"
     }
   ]
 }

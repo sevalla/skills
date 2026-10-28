@@ -1,76 +1,90 @@
-# Sevalla Skills -- Development Guide
+# Sevalla agent skills: development guide
 
-## Repository Structure
+How to change the `sevalla` skill and keep it correct. People and agents both work here.
+
+## Layout
 
 ```
-.claude-plugin/
-  marketplace.json          # Claude Code marketplace listing
-
+.claude-plugin/marketplace.json     Claude Code marketplace: one plugin, ./plugins/sevalla
 plugins/sevalla/
-  .claude-plugin/
-    plugin.json             # Plugin metadata (name, version, author)
-  hooks/
-    hooks.json              # Hook definitions for auto-approval
-    auto-approve-mcp.sh     # PreToolUse hook: auto-approves Sevalla API calls
+  .claude-plugin/plugin.json        Plugin manifest: name, version, listing fields
+  .mcp.json                         The Sevalla MCP server (https://mcp.sevalla.com/mcp)
+  assets/icon.png                   Listing icon, from the brand kit (social/avatar.png)
   skills/sevalla/
-    SKILL.md                # Main routing skill (entry point for all Sevalla operations)
-    references/
-      setup.md              # Create projects, provision apps/databases/static sites/storage
-      deploy.md             # Deployments, builds, rollbacks, pipelines, preview apps
-      configure.md          # Env vars, domains, scaling, networking, CDN, IP restrictions
-      operate.md            # Logs, metrics, backups, health checks, troubleshooting
-      manage.md             # API keys, webhooks, load balancers, docker registries
-    scripts/
-      sevalla-api.sh        # REST API fallback when MCP tools are unavailable
-
-scripts/
-  install.sh                # Multi-tool installer (Claude Code, Cursor, Codex, OpenCode)
-
-AGENTS.md                   # This file — development guide for contributors
-CLAUDE.md                   # Symlink to AGENTS.md
-README.md                   # User-facing documentation
-LICENSE                     # MIT
+    SKILL.md                        Rules, interface choice, the deploy and debug workflows, routing
+    references/                     Opened on demand: deploy, frameworks, troubleshooting,
+                                    production, operations, cli
+  evals/                            claude plugin eval cases; mocks/sevalla holds the MCP mocks
+scripts/check.ts                    Verifies the skill against the live API, docs and CLI
+.github/workflows/ci.yml            Runs the check on every push and every Monday
 ```
 
-## Authoring Guidelines
+## What the skill is for
 
-### SKILL.md
+The MCP server already describes its 27 tools and the API's 252 operations, and the docs describe
+the platform. The skill adds what neither can: reading the user's code before a deploy, choosing
+the right product and operation, the order of a workflow, Sevalla facts an agent needs before it
+acts, and the safety rules. Don't copy API reference or docs pages into it: link them, or name the
+operation ID.
 
-- Keep concise and routing-focused — it is a dispatcher, not an encyclopedia
-- Under 300 lines
-- Quick operations section for the 8 most common tasks
-- Routing table maps intent to reference files
-- Include composition patterns for multi-step workflows
+## Writing rules
 
-### Reference Files
+- **SKILL.md** stays under 500 lines (it's about 170). The rules come first: after compaction,
+  only the start of a skill is kept.
+- **References** are one level deep, linked from SKILL.md, each with a contents list when it runs
+  past 100 lines.
+- Name MCP tools without a prefix (`trigger_deployment`): the prefix depends on how the server is
+  connected. Name other operations by operation ID (`cloneApplicationV3`).
+- Every fact comes from the docs (`~/dev/docs` or docs.sevalla.com), the OpenAPI spec, the MCP
+  server's source or the CLI's schema. When they disagree, the API and the backend win; tell the
+  docs team.
+- Write in Sevalla's voice, as the brand guidelines in [sevalla/brandkit](https://github.com/sevalla/brandkit) describe:
+  plain words, sentence case, no emoji, example names such as `storefront` and `shop.example.com`.
+- No `allowed-tools` in the frontmatter: it pre-approves tools, which would let destructive calls
+  skip the user's confirmation.
 
-- One file per operational domain (setup, deploy, configure, operate, manage)
-- Action-oriented with MCP code snippets for every operation
-- Include troubleshooting section at the bottom
-- Target 200-300 lines per file
+## Check your change
 
-### MCP Code Snippets
+```sh
+node scripts/check.ts
+claude plugin validate plugins/sevalla
+claude plugin validate .
+```
 
-- Format: `async () => { const res = await sevalla.request({...}); return res.body }`
-- Always use the execute tool format
-- Include the search tool format for discovery operations
-- Replace placeholder IDs with descriptive names (APP_ID, DB_ID, etc.)
+`check.ts` fails when an operation ID isn't in the live spec, a tool name isn't in
+`evals/mocks/sevalla/_tools.json`, a `sevalla` command or flag isn't in the CLI's schema, a
+docs.sevalla.com page isn't in `llms.txt`, or a relative link or anchor is broken. It needs
+Node.js 24 and network access, and uses `sevalla schema` when the CLI is installed, or
+`npx @sevalla/cli` otherwise.
 
-### Adding New Operations
+When the MCP server's tools change, refresh `_tools.json` from its `tools/list` response, for
+example by running the server in stdio mode from its repository:
 
-1. Identify which reference file the operation belongs to
-2. Add the operation with endpoint, body schema, and MCP snippet
-3. If it is a very common operation, also add it to Quick Operations in SKILL.md
-4. Update routing table if a new category is needed
+```sh
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"skills","version":"0"}}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | SEVALLA_API_KEY=unused node src/index.ts --stdio
+```
 
-### Testing Changes
+## Evals
 
-- Install locally: copy `plugins/sevalla/` to `~/.claude/skills/`
-- Test with Claude Code by asking Sevalla-related questions
-- Verify MCP snippets work against the Sevalla API
+Each case in `plugins/sevalla/evals/` is a prompt, graders, and fixed answers for the MCP tools it
+needs, so runs never reach a Sevalla account. Cases with a `scaffold.sh` build a small project in
+the workspace first.
 
-## API Reference
+The comparison that matters is the skill against the MCP server alone. `claude plugin eval`'s
+default baseline runs without the plugin, and so without the MCP server too. Run the suite twice
+and compare:
 
-- OpenAPI spec: https://api.sevalla.com/v3/openapi.json
-- Documentation: https://docs.sevalla.com/
-- MCP server: mcp.sevalla.com/mcp
+```sh
+claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet
+claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet --disallow-tools Skill
+```
+
+Add `--model haiku` or `--model sonnet` to check smaller models. Each run is a real model call on
+your account. A good new case is one the MCP server alone gets wrong: write it from a real support
+case or a failed agent session, and check that it fails with `--disallow-tools Skill` before you
+change the skill to fix it.
+
+## Release
+
+Bump `version` in `plugins/sevalla/.claude-plugin/plugin.json` and in the skill's `metadata`, and
+the version badge in the README. Tags are `vX.Y.Z`.

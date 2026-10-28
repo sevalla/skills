@@ -1,0 +1,1 @@
+{"total":3,"variables":[{"key":"DATABASE_URL","id":"e1e1e1e1-1111-4111-8111-111111111111","runtime":true,"buildtime":false},{"key":"STRIPE_SECRET_KEY","id":"e1e1e1e1-1111-4111-8111-222222222222","runtime":true,"buildtime":false},{"key":"NODE_ENV","id":"e1e1e1e1-1111-4111-8111-333333333333","runtime":true,"buildtime":true}]}

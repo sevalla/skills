@@ -1,0 +1,1 @@
+{"id":"33333333-3333-4333-8333-bbbbbbbbbbbb","name":"orders-db-x9m2q","display_name":"orders-db","type":"postgresql","version":"17","status":"ready","size":"db-1","internal_hostname":"orders-db-x9m2q.internal","internal_port":"5432","internal_connections":[{"target_name":"orders-api","target_type":"appResource"}]}

@@ -1,0 +1,1 @@
+{"id":"77777777-0000-4000-8000-000000000001","status":"success","branch":"main","commit":"1a2b3c4","steps":[{"name":"build","status":"success","duration_seconds":38},{"name":"deploy","status":"success"}],"finished_at":"2026-10-28T07:02:41Z"}

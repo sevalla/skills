@@ -1,138 +1,125 @@
 <div align="center">
 
-# Sevalla Skills
+<img src="https://assets.sevalla.com/brand/logo/svg/sevalla-mark-color.svg" alt="" width="64" height="64" />
 
-**Give AI agents the knowledge to manage your entire Sevalla infrastructure.**
+# Sevalla agent skills
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-FF6723)](https://docs.anthropic.com/en/docs/claude-code)
-[![Sevalla API](https://img.shields.io/badge/Sevalla_API-v3-339933)](https://api-docs.sevalla.com)
-[![MCP](https://img.shields.io/badge/MCP-compatible-8B5CF6)](https://mcp.sevalla.com/mcp)
+**Teach your coding agent to deploy and run applications on Sevalla.**
+
+[![CI](https://github.com/sevalla/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/sevalla/skills/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-2.0.0-57534e)](plugins/sevalla/.claude-plugin/plugin.json)
+[![License: MIT](https://img.shields.io/badge/license-MIT-57534e)](LICENSE)
+
+[Docs](https://docs.sevalla.com/ai-agents/overview) · [Sevalla](https://sevalla.com)
 
 </div>
 
----
+The `sevalla` skill shows Claude Code, Codex, Cursor and other coding agents how to deploy and
+operate applications, databases and static sites on [Sevalla](https://sevalla.com). It reads your
+project before it deploys, works through the Sevalla MCP server (or the `sevalla` CLI, or the
+API), and asks before anything that costs money or can't be undone. In Claude Code, the plugin
+also connects the [Sevalla MCP server](https://github.com/sevalla/mcp).
 
-Agent skills that teach AI assistants how to operate [Sevalla](https://sevalla.com) cloud infrastructure. Deploy applications, provision databases, manage static sites, configure domains, scale processes, and troubleshoot failures — all through natural conversation.
+## Install
 
-Works with the [Sevalla MCP Server](https://github.com/sevalla-hosting/mcp) for direct API access, or standalone with API keys.
+In Claude Code, install the plugin. It adds the skill and the Sevalla MCP server:
 
-## Quick Start
-
-### Claude Code
-
-```bash
-claude plugin add sevalla-hosting/skills
+```sh
+claude plugin marketplace add sevalla/skills
+claude plugin install sevalla@sevalla-skills
 ```
 
-### Other AI Tools
+Or, inside Claude Code, `/plugin install sevalla --marketplace sevalla/skills`.
 
-```bash
-npx skills add sevalla-hosting/skills
+For other agents, add the skill with the [skills CLI](https://github.com/vercel-labs/skills), then
+connect the agent to the MCP server with its
+[setup guide](https://docs.sevalla.com/ai-agents/overview):
+
+```sh
+npx skills add sevalla/skills
 ```
 
-Or install via curl:
+## Quick start
 
-```bash
-curl -fsSL https://sevalla.com/skills.sh | bash
+1. Install the plugin as above and start Claude Code in your project.
+2. Type `/mcp`, select **sevalla**, choose **Authenticate**, then pick your company and the
+   permissions in the browser.
+3. Ask: "Deploy this project to Sevalla."
+
+The agent reads the project, makes the changes Sevalla needs (port, runtime version, migrations),
+creates the application and database, deploys, follows the deployment, and gives you the URL.
+
+## Usage
+
+Ask in your own words. The skill covers the whole life of a service:
+
+| Area | For example |
+| --- | --- |
+| Deploy | "Deploy this repo", "Host this static site", "Add a Postgres database and connect it" |
+| Debug | "Why did the last deployment fail?", "The site returns 502", "Reloading /pricing gives a 404" |
+| Configure | "Set STRIPE_KEY on storefront", "Scale the web process to 3 instances", "Add shop.example.com" |
+| Ship safely | "Make a staging copy of storefront", "Promote staging to production", "Roll back" |
+| Run in production | "Is this ready to go live?", "Back up the database before the migration", "Put the app in maintenance mode" |
+
+The skill is one [`SKILL.md`](plugins/sevalla/skills/sevalla/SKILL.md) with its rules and the
+deploy and debug workflows, and reference files the agent opens only when a task needs them:
+
+| File | Covers |
+| --- | --- |
+| [`deploy.md`](plugins/sevalla/skills/sevalla/references/deploy.md) | Applications, processes, databases, variables, static sites, Docker images, CI/CD, pipelines |
+| [`frameworks.md`](plugins/sevalla/skills/sevalla/references/frameworks.md) | What each framework needs, with the docs guide for each |
+| [`troubleshooting.md`](plugins/sevalla/skills/sevalla/references/troubleshooting.md) | Builds, rollouts, exit codes, HTTP errors, databases, domains, static sites |
+| [`production.md`](plugins/sevalla/skills/sevalla/references/production.md) | Go-live, domains, scaling, health checks, backups, network, cost, API keys |
+| [`operations.md`](plugins/sevalla/skills/sevalla/references/operations.md) | Operation IDs for everything the dedicated MCP tools don't cover |
+| [`cli.md`](plugins/sevalla/skills/sevalla/references/cli.md) | The same work through the `sevalla` CLI |
+
+## Authentication
+
+The MCP server signs in with OAuth: no key in any file. The agent can reach one company, with the
+permissions you choose when you authorize it; pick **Company viewer** to keep it read-only. Without
+the MCP server, the skill uses the CLI (`sevalla login`) or an API key in `SEVALLA_API_TOKEN`. See
+[API keys](https://docs.sevalla.com/developer-tools/api-keys).
+
+## How it works
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://assets.sevalla.com/brand/diagrams/docs/mcp-flow-dark.svg" />
+  <img src="https://assets.sevalla.com/brand/diagrams/docs/mcp-flow-light.svg" alt="Your AI agent calls tools on Sevalla's MCP server, signed in with OAuth or an API key. The server calls the Sevalla API, limited by the key's permissions, to manage your company's applications, databases and static sites." />
+</picture>
+
+The MCP server gives the agent the tools; the skill gives it the judgment. The server can't see
+your code, so the skill reads it: which product fits, which port and runtime, where migrations
+run. It picks the narrowest operation (clone rather than recreate, suspend rather than delete),
+asks before anything billed or irreversible, follows each deployment to its end, and keeps secrets
+out of the conversation. When the MCP server isn't connected, it falls back to the CLI, then the
+API, in the order the docs recommend.
+
+## Examples
+
+- "Deploy this Next.js app with a Postgres database in Frankfurt."
+- "The latest deployment of storefront failed. Find out why, don't change anything yet."
+- "Make a staging copy of storefront that doesn't touch the production database."
+- "Add shop.example.com to storefront and tell me which DNS records to create."
+- "What was storefront's p95 response time over the last day?"
+
+## Development
+
+```sh
+# Check every operation ID, MCP tool, CLI command, docs link and anchor in the skill
+node scripts/check.ts
+
+# Validate the plugin and the marketplace
+claude plugin validate plugins/sevalla
+claude plugin validate .
+
+# Run the evals with the skill, then with the MCP server alone, and compare
+claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet
+claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet --disallow-tools Skill
 ```
 
-Supports Claude Code, Cursor, Codex, and OpenCode.
-
-## Setup
-
-### Option 1: MCP Server (Recommended)
-
-Pair with the [Sevalla MCP Server](https://github.com/sevalla-hosting/mcp) for the best experience. The skill uses `search` and `execute` MCP tools to discover and call any of Sevalla's 201 API endpoints.
-
-```json
-{
-  "mcpServers": {
-    "sevalla": {
-      "url": "https://mcp.sevalla.com/mcp"
-    }
-  }
-}
-```
-
-Authentication is handled via OAuth — you'll be prompted to authorize through Sevalla on first connection.
-
-### Option 2: API Key Only
-
-Set `SEVALLA_API_KEY` and the skill falls back to the bundled `sevalla-api.sh` helper script for direct REST API calls.
-
-```bash
-export SEVALLA_API_KEY="your-api-key"
-```
-
-Get your API key from [app.sevalla.com/api-keys](https://app.sevalla.com/api-keys).
-
-## What Can It Do?
-
-| Category | Operations |
-| ------------- | --------------------------------------------------------------------- |
-| **Setup** | Create projects, provision apps, databases, static sites, object storage |
-| **Deploy** | Trigger deployments, rollback, manage pipelines, preview apps |
-| **Configure** | Environment variables, domains, scaling, networking, health checks |
-| **Operate** | View logs, check metrics, manage backups, troubleshoot failures |
-| **Manage** | API keys, webhooks, load balancers, docker registries |
-
-## How It Works
-
-```
-User: "Deploy my app to Sevalla"
-       │
-       ▼
-┌─────────────────────────────────┐
-│  SKILL.md (routing layer)       │
-│                                 │
-│  • Resource model               │
-│  • 8 quick operations (inline)  │
-│  • Routing table ──────────┐    │
-└────────────────────────────┼────┘
-                             │
-            ┌────────────────┼────────────────┐
-            ▼                ▼                ▼
-      ┌──────────┐    ┌──────────┐    ┌──────────┐
-      │ setup.md │    │deploy.md │    │  ...     │
-      │          │    │          │    │          │
-      │ Projects │    │ Deploys  │    │ 3 more   │
-      │ Apps     │    │ Builds   │    │ reference│
-      │ DBs      │    │ Rollback │    │ files    │
-      │ Storage  │    │ Pipelines│    │          │
-      └──────────┘    └──────────┘    └──────────┘
-```
-
-The skill uses **progressive disclosure** — only 1-2 reference files load per request, keeping context usage minimal while covering all 201 API endpoints.
-
-| Layer | Token Budget | Contents |
-| --------- | ------------ | ---------------------------------------- |
-| SKILL.md | ~200 lines | Resource model, quick ops, routing table |
-| Reference | ~200-500 lines each | Full endpoint docs with MCP code snippets |
-
-## Repository Structure
-
-```
-plugins/sevalla/
-├── skills/sevalla/
-│   ├── SKILL.md              # Routing skill (loaded on activation)
-│   ├── references/
-│   │   ├── setup.md          # Projects, apps, databases, static sites, storage
-│   │   ├── deploy.md         # Deployments, builds, rollbacks, pipelines
-│   │   ├── configure.md      # Env vars, domains, scaling, networking
-│   │   ├── operate.md        # Logs, metrics, backups, troubleshooting
-│   │   └── manage.md         # API keys, webhooks, load balancers, registries
-│   └── scripts/
-│       └── sevalla-api.sh    # REST API fallback (when MCP unavailable)
-└── hooks/
-    ├── hooks.json            # Auto-approve Sevalla API calls
-    └── auto-approve-mcp.sh
-```
-
-## Contributing
-
-See [AGENTS.md](AGENTS.md) for development guidelines, authoring conventions, and testing instructions.
+The evals answer from mocks of the MCP server in `plugins/sevalla/evals/mocks/`, so they never
+touch a Sevalla account. [AGENTS.md](AGENTS.md) has the authoring rules.
 
 ## License
 
-[MIT](LICENSE)
+MIT. See [LICENSE](LICENSE).

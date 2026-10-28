@@ -1,0 +1,1888 @@
+{
+  "tools": [
+    {
+      "name": "list_services",
+      "title": "List Sevalla services",
+      "description": "Lists the applications, static sites and databases in the Sevalla account with status, names and the IDs other tools take. One service in detail: get_application, get_static_site, get_database. Pipelines, projects, load balancers, buckets and lists by status, source or engine: sevalla_api_read.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "type": {
+            "description": "One service type only. Default: all.",
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site",
+              "database"
+            ]
+          },
+          "search": {
+            "description": "Text matched against names, case-insensitive.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "project_id": {
+            "type": "string",
+            "description": "Project ID; filters applications and databases."
+          },
+          "limit": {
+            "default": 50,
+            "description": "Maximum services per type.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "default": 0,
+            "description": "Services skipped per type, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List Sevalla services",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_application",
+      "title": "Get Sevalla application",
+      "description": "Returns a Sevalla application with its processes (web, worker, cron, job) and their scaling, domains with DNS records and verification errors, and latest deployment. History: list_deployments. Logs: search_runtime_logs, get_deployment_logs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "description": "Application ID (list_services)."
+          },
+          "detail": {
+            "default": "summary",
+            "description": "full adds every field the API returns.",
+            "type": "string",
+            "enum": [
+              "summary",
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "application_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla application",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_static_site",
+      "title": "Get Sevalla static site",
+      "description": "Returns a Sevalla static site with its build settings, domains with DNS records and verification errors, and latest deployment. History: list_deployments.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "static_site_id": {
+            "type": "string",
+            "description": "Static site ID (list_services)."
+          },
+          "detail": {
+            "default": "summary",
+            "description": "full adds every field the API returns.",
+            "type": "string",
+            "enum": [
+              "summary",
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "static_site_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla static site",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_database",
+      "title": "Get Sevalla database",
+      "description": "Returns a Sevalla database: engine, version, status, size, internal and external endpoints, recent backups and internal connections to applications. Passwords are not included. Usage over time: get_metrics.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "database_id": {
+            "type": "string",
+            "description": "Database ID (list_services)."
+          },
+          "detail": {
+            "default": "summary",
+            "description": "full adds every field the API returns.",
+            "type": "string",
+            "enum": [
+              "summary",
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "database_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla database",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_platform_options",
+      "title": "Get Sevalla regions and sizes",
+      "description": "Lists Sevalla regions (clusters) and machine sizes for application processes and databases, with CPU, memory and storage limits. create_application, create_database and scale_process take these IDs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "kind": {
+            "description": "Sizes for one kind only. Default: both.",
+            "type": "string",
+            "enum": [
+              "application",
+              "database"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla regions and sizes",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_deployments",
+      "title": "List Sevalla deployments",
+      "description": "Lists deployments of a Sevalla application or static site, newest first, with status, trigger, branch, commit and timing.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "limit": {
+            "default": 10,
+            "description": "Maximum deployments returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "offset": {
+            "default": 0,
+            "description": "Deployments skipped, for paging.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List Sevalla deployments",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_deployment",
+      "title": "Get Sevalla deployment",
+      "description": "Returns a deployment of a Sevalla application or static site: status, steps, branch, commit, image, build error and timing. It reports the progress of deployments started by trigger_deployment or rollback_deployment. Output: get_deployment_logs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "deployment_id": {
+            "type": "string",
+            "description": "Deployment ID (list_deployments)."
+          },
+          "detail": {
+            "default": "summary",
+            "description": "full adds every field the API returns.",
+            "type": "string",
+            "enum": [
+              "summary",
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id",
+          "deployment_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla deployment",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_deployment_logs",
+      "title": "Get Sevalla deployment logs",
+      "description": "Returns the build and rollout log of a deployment of a Sevalla application or static site, one line per entry, by default the last 100 lines. errors_only keeps lines with an error severity or mentioning errors, failures or exceptions. Running application logs: search_runtime_logs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "deployment_id": {
+            "type": "string",
+            "description": "Deployment ID (list_deployments)."
+          },
+          "errors_only": {
+            "default": false,
+            "description": "Only lines that look like errors.",
+            "type": "boolean"
+          },
+          "search": {
+            "description": "Only lines containing this text (case-insensitive).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "limit": {
+            "default": 100,
+            "description": "Maximum lines returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "position": {
+            "default": "end",
+            "description": "Last (end) or first (start) matching lines.",
+            "type": "string",
+            "enum": [
+              "end",
+              "start"
+            ]
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id",
+          "deployment_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla deployment logs",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "trigger_deployment",
+      "title": "Deploy Sevalla service",
+      "description": "Starts a deployment of a Sevalla application or static site: by default the latest commit of the default branch. Applications can also deploy a specific commit or rebuild without the build cache. It runs asynchronously and replaces the running version when it succeeds; get_deployment reports progress.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "branch": {
+            "description": "Branch to deploy instead of the default branch.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "commit_sha": {
+            "description": "Applications only: full 40-character SHA of a commit on the branch.",
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "docker_image": {
+            "description": "Image to deploy, for Docker-based applications.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "restart": {
+            "description": "Applications only: redeploy the current build without rebuilding.",
+            "type": "boolean"
+          },
+          "skip_build_cache": {
+            "description": "Applications only: rebuild without the build cache.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Deploy Sevalla service",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "rollback_deployment",
+      "title": "Roll back Sevalla service",
+      "description": "Rolls a Sevalla application or static site back to an earlier successful deployment, reusing its build. Applications return to their most recent successful deployment; static sites to deployment_id or, by default, the last successful one before the current. get_deployment reports progress.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "deployment_id": {
+            "type": "string",
+            "description": "Static sites only: deployment to redeploy."
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Roll back Sevalla service",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_runtime_logs",
+      "title": "Search Sevalla runtime logs",
+      "description": "Returns runtime logs (stdout and stderr of running processes) of a Sevalla application: the latest entries of a time window (default last 60 minutes), oldest first, one line each. Build output: get_deployment_logs. HTTP requests: search_access_logs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "description": "Application ID (list_services)."
+          },
+          "since_minutes": {
+            "description": "Window length in minutes, ending at end_time. Default 60.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 43200
+          },
+          "end_time": {
+            "description": "Window end as an ISO 8601 timestamp. Default now.",
+            "type": "string"
+          },
+          "severity": {
+            "description": "Only entries with this severity.",
+            "type": "string",
+            "enum": [
+              "DEBUG",
+              "INFO",
+              "WARN",
+              "ERROR"
+            ]
+          },
+          "search": {
+            "description": "Only entries whose message contains this text (case-insensitive).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "limit": {
+            "default": 100,
+            "description": "Maximum entries returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        },
+        "required": [
+          "application_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search Sevalla runtime logs",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_access_logs",
+      "title": "Search Sevalla access logs",
+      "description": "Returns HTTP access logs of a Sevalla application or static site: the latest requests of a time window (default last 60 minutes), oldest first, with status, method, path and client details. Aggregated traffic and error rates: get_metrics.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "since_minutes": {
+            "description": "Window length in minutes, ending at end_time. Default 60.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 43200
+          },
+          "end_time": {
+            "description": "Window end as an ISO 8601 timestamp. Default now.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status code (404) or class (5xx).",
+            "type": "string"
+          },
+          "request_method": {
+            "description": "Only requests with this method.",
+            "type": "string",
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "OPTIONS"
+            ]
+          },
+          "path_prefix": {
+            "description": "Only paths starting with this text.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "search": {
+            "description": "Only entries containing this text (case-insensitive).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "limit": {
+            "default": 100,
+            "description": "Maximum entries returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search Sevalla access logs",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_metrics",
+      "title": "Get Sevalla metrics",
+      "description": "Returns metrics of a Sevalla application or static site (traffic, response times, status codes, top pages and countries, slowest requests), a process (CPU, memory, instances, exit codes) or a database (CPU, memory, storage), by default for the last 60 minutes. Series are summarized as min, max, avg, last and a downsampled series.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "target": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site",
+              "process",
+              "database"
+            ],
+            "description": "What to measure."
+          },
+          "application_id": {
+            "type": "string",
+            "description": "For target application or process."
+          },
+          "process_id": {
+            "type": "string",
+            "description": "For target process (get_application)."
+          },
+          "static_site_id": {
+            "type": "string",
+            "description": "For target static_site."
+          },
+          "database_id": {
+            "type": "string",
+            "description": "For target database."
+          },
+          "metrics": {
+            "description": "Default: a standard set. application, static_site: requests_per_minute, response_time_ms, average_response_time_ms, status_codes, top_status_codes, top_countries, slowest_requests, top_pages. process: cpu_usage_cores, cpu_limit_cores, memory_usage_bytes, memory_limit_bytes, instance_count, exit_codes. database: cpu_usage_cores, cpu_limit_cores, memory_usage_bytes, memory_limit_bytes, storage_usage_bytes, storage_limit_bytes, allocated_storage_bytes, used_storage_bytes.",
+            "minItems": 1,
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "description": "application, static_site: only requests with this status code (404) or class (5xx).",
+            "type": "string"
+          },
+          "request_method": {
+            "description": "application, static_site: only this method.",
+            "type": "string",
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "OPTIONS"
+            ]
+          },
+          "path_prefix": {
+            "description": "application, static_site: only paths starting with this text.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "percentile": {
+            "description": "Percentile of response_time_ms, e.g. 95.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99
+          },
+          "since_minutes": {
+            "description": "Window length in minutes, ending at end_time. Default 60.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 43200
+          },
+          "end_time": {
+            "description": "Window end as an ISO 8601 timestamp. Default now.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Get Sevalla metrics",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "list_environment_variables",
+      "title": "List Sevalla environment variables",
+      "description": "Lists the environment variables of a Sevalla application, static site or the company-wide global set, with their build, runtime, preview and branch scoping. Stored values are withheld.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site",
+              "global"
+            ],
+            "description": "One application, one static site, or global (company-wide variables every application inherits unless it sets the same key)."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services). Not used with scope global."
+          }
+        },
+        "required": [
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "List Sevalla environment variables",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "set_environment_variables",
+      "title": "Set Sevalla environment variables",
+      "description": "Creates or updates environment variables of a Sevalla application, static site or the company-wide global set; other variables stay unchanged and values are never echoed. Changes apply at the next deployment.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site",
+              "global"
+            ],
+            "description": "One application, one static site, or global (company-wide variables every application inherits unless it sets the same key)."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services). Not used with scope global."
+          },
+          "variables": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255,
+                  "description": "Name, e.g. DATABASE_URL."
+                },
+                "value": {
+                  "type": "string",
+                  "maxLength": 32768,
+                  "description": "Value; stored encrypted, never echoed."
+                },
+                "runtime": {
+                  "description": "Applications, global: available at runtime (new: true).",
+                  "type": "boolean"
+                },
+                "buildtime": {
+                  "description": "Applications, global: available during builds (new: true).",
+                  "type": "boolean"
+                },
+                "production": {
+                  "description": "Static sites: used in production (new: true).",
+                  "type": "boolean"
+                },
+                "preview": {
+                  "description": "Static sites: used in previews (new: true).",
+                  "type": "boolean"
+                },
+                "branch": {
+                  "description": "Static sites: only this branch.",
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                }
+              },
+              "required": [
+                "key",
+                "value"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Variables to create or update."
+          },
+          "redeploy": {
+            "default": false,
+            "description": "Deploy afterwards so the change takes effect now (applications and static sites).",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scope",
+          "variables"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Set Sevalla environment variables",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "delete_environment_variables",
+      "title": "Delete Sevalla environment variables",
+      "description": "Deletes environment variables by key from a Sevalla application, static site or the company-wide global set. Changes apply at the next deployment.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site",
+              "global"
+            ],
+            "description": "One application, one static site, or global (company-wide variables every application inherits unless it sets the same key)."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services). Not used with scope global."
+          },
+          "keys": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "description": "Keys to delete."
+          },
+          "redeploy": {
+            "default": false,
+            "description": "Deploy afterwards so the change takes effect now (applications and static sites).",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scope",
+          "keys"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Delete Sevalla environment variables",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "scale_process",
+      "title": "Scale Sevalla process",
+      "description": "Sets how a Sevalla application process scales: fixed instances or an autoscaling range, and/or its machine size. Bigger sizes and more instances cost more. By default the application restarts from its current build so the change applies now. The start command, port, health checks and cron schedule are other fields of updateProcessV3, which sevalla_api_update runs.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "description": "Application ID (list_services)."
+          },
+          "process_id": {
+            "type": "string",
+            "description": "Process ID (get_application)."
+          },
+          "instances": {
+            "description": "Fixed instance count; 0 stops the process.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "autoscaling": {
+            "description": "Autoscaling range with CPU and/or memory targets.",
+            "type": "object",
+            "properties": {
+              "min_instances": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 50
+              },
+              "max_instances": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50
+              },
+              "target_cpu_percent": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "target_memory_percent": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "min_instances",
+              "max_instances"
+            ],
+            "additionalProperties": false
+          },
+          "size_id": {
+            "type": "string",
+            "description": "Size ID (get_platform_options)."
+          },
+          "apply_now": {
+            "default": true,
+            "description": "Restart now so the change applies.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "application_id",
+          "process_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Scale Sevalla process",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "add_domain",
+      "title": "Add Sevalla custom domain",
+      "description": "Adds a custom domain to a Sevalla application or static site and returns the DNS records to create at the DNS provider. Sevalla then verifies them and issues SSL, or serves a custom certificate when one is given; get_application or get_static_site shows the status.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "application",
+              "static_site"
+            ],
+            "description": "Kind of service that service_id refers to."
+          },
+          "service_id": {
+            "type": "string",
+            "description": "Application or static site ID (list_services)."
+          },
+          "domain": {
+            "type": "string",
+            "pattern": "^(\\*\\.)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$",
+            "description": "Domain, e.g. app.example.com."
+          },
+          "wildcard": {
+            "default": false,
+            "description": "Also serve all subdomains.",
+            "type": "boolean"
+          },
+          "ssl_certificate": {
+            "description": "Custom SSL certificate (PEM, with its chain) instead of an issued one.",
+            "type": "string",
+            "maxLength": 32000,
+            "pattern": "-----BEGIN CERTIFICATE-----"
+          },
+          "ssl_private_key": {
+            "description": "PEM private key of ssl_certificate; not returned.",
+            "type": "string",
+            "maxLength": 32000,
+            "pattern": "-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          }
+        },
+        "required": [
+          "service_type",
+          "service_id",
+          "domain"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Add Sevalla custom domain",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_application",
+      "title": "Create Sevalla application",
+      "description": "Creates a Sevalla application from a Git repository or Docker image with one web process, and by default starts its first deployment. It is billed by the size and number of its process instances.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "description": "Display name of the new application."
+          },
+          "cluster_id": {
+            "type": "string",
+            "description": "Region ID (get_platform_options)."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "privateGit",
+              "publicGit",
+              "dockerImage"
+            ],
+            "description": "privateGit: via the account GitHub, GitLab or Bitbucket connection. publicGit: a public repository URL."
+          },
+          "repo_url": {
+            "description": "Repository URL, for Git sources.",
+            "type": "string",
+            "format": "uri"
+          },
+          "git_type": {
+            "description": "Provider, when not detectable from the URL.",
+            "type": "string",
+            "enum": [
+              "github",
+              "gitlab",
+              "bitbucket"
+            ]
+          },
+          "default_branch": {
+            "description": "Branch to deploy. Default: repository default.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "docker_image": {
+            "description": "Image, e.g. nginx:1.27, for source dockerImage.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "docker_registry_credential_id": {
+            "type": "string",
+            "description": "Registry credential for private images."
+          },
+          "project_id": {
+            "type": "string",
+            "description": "Project to add the service to."
+          },
+          "deploy": {
+            "default": true,
+            "description": "Start the first deployment.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "display_name",
+          "cluster_id",
+          "source"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create Sevalla application",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_static_site",
+      "title": "Create Sevalla static site",
+      "description": "Creates a Sevalla static site from a Git repository and starts its first build. Omitted build settings are detected automatically.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "description": "Display name of the new static site."
+          },
+          "repo_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Repository URL."
+          },
+          "default_branch": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Branch to build."
+          },
+          "source": {
+            "description": "privateGit: via the account Git connection. publicGit: a public repository.",
+            "type": "string",
+            "enum": [
+              "privateGit",
+              "publicGit"
+            ]
+          },
+          "git_type": {
+            "description": "Provider, when not detectable from the URL.",
+            "type": "string",
+            "enum": [
+              "github",
+              "gitlab",
+              "bitbucket"
+            ]
+          },
+          "install_command": {
+            "description": "e.g. npm ci",
+            "type": "string",
+            "maxLength": 500
+          },
+          "build_command": {
+            "description": "e.g. npm run build",
+            "type": "string",
+            "maxLength": 500
+          },
+          "published_directory": {
+            "description": "Build output directory, e.g. dist.",
+            "type": "string",
+            "maxLength": 255
+          },
+          "root_directory": {
+            "description": "Repository subdirectory of the site.",
+            "type": "string",
+            "maxLength": 255
+          },
+          "node_version": {
+            "description": "Node.js version, e.g. 22.",
+            "type": "string",
+            "maxLength": 20
+          },
+          "auto_deploy": {
+            "description": "Deploy on every push.",
+            "type": "boolean"
+          },
+          "allow_deploy_paths": {
+            "description": "Only pushes changing these globs deploy.",
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          },
+          "ignore_deploy_paths": {
+            "description": "Pushes changing only these globs skip deployment.",
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          },
+          "is_preview_enabled": {
+            "description": "Preview deployments for pull requests.",
+            "type": "boolean"
+          },
+          "index_file": {
+            "description": "e.g. index.html",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "error_file": {
+            "description": "Not-found page, e.g. 404.html",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "project_id": {
+            "type": "string",
+            "description": "Project to add the service to."
+          }
+        },
+        "required": [
+          "display_name",
+          "repo_url",
+          "default_branch"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create Sevalla static site",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "create_database",
+      "title": "Create Sevalla database",
+      "description": "Creates a managed Sevalla database (billed by size). Its password is generated on the server and never returned. connect_to_application_id also connects it to that application and stores the connection URL in the application variable env_var_name, unless that variable already exists. Provisioning is asynchronous; get_database shows when it is ready.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "description": "Display name of the new database."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "postgresql",
+              "mysql",
+              "mariadb",
+              "redis",
+              "valkey"
+            ],
+            "description": "Database engine."
+          },
+          "version": {
+            "description": "Engine version, e.g. 17 for PostgreSQL. Default: the newest in the cluster.",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          },
+          "cluster_id": {
+            "type": "string",
+            "description": "Region ID (get_platform_options)."
+          },
+          "size_id": {
+            "type": "string",
+            "description": "Size ID (get_platform_options)."
+          },
+          "db_name": {
+            "description": "Database name. Default: from display_name.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_+-]{2,100}$"
+          },
+          "db_user": {
+            "description": "Username; not root or postgres.",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 32
+          },
+          "extensions": {
+            "description": "PostgreSQL extensions to enable.",
+            "type": "object",
+            "properties": {
+              "vector": {
+                "type": "boolean"
+              },
+              "postgis": {
+                "type": "boolean"
+              },
+              "cron": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "project_id": {
+            "type": "string",
+            "description": "Project to add the service to."
+          },
+          "connect_to_application_id": {
+            "type": "string",
+            "description": "Application in the same region to connect."
+          },
+          "env_var_name": {
+            "default": "DATABASE_URL",
+            "description": "Variable that receives the connection URL.",
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          }
+        },
+        "required": [
+          "display_name",
+          "type",
+          "cluster_id",
+          "size_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create Sevalla database",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "search_sevalla_docs",
+      "title": "Search Sevalla documentation",
+      "description": "Searches the Sevalla documentation (docs.sevalla.com): features, settings, limits, builds, frameworks and migration guides. Returns the best-matching pages with their most relevant section. It reads public docs, not the account.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "description": "What to look up, e.g. \"nixpacks node version\"."
+          },
+          "limit": {
+            "default": 3,
+            "description": "Maximum pages returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search Sevalla documentation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sevalla_api_search",
+      "title": "Search Sevalla API operations",
+      "description": "Searches all 252 operations of the Sevalla API v3 (reference: https://api-docs.sevalla.com), including those behind dedicated tools, by keywords and returns their IDs, parameters, body fields and the tool that runs each. 179 have no dedicated tool, among them the clone, suspend, cancel and promote operations. operation_id returns one operation in full. It reads the API reference, not the account.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "query": {
+            "description": "Keywords, e.g. \"load balancer destination\".",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "operation_id": {
+            "description": "Exact ID for full details.",
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$"
+          },
+          "class": {
+            "description": "Only this class.",
+            "type": "string",
+            "enum": [
+              "read",
+              "create",
+              "update",
+              "delete"
+            ]
+          },
+          "limit": {
+            "default": 5,
+            "description": "Maximum operations returned.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          }
+        },
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Search Sevalla API operations",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sevalla_api_read",
+      "title": "Read from the Sevalla API",
+      "description": "Runs one read-only (GET) operation of the Sevalla API v3 (reference: https://api-docs.sevalla.com) by operation ID, for data without a dedicated tool: projects, pipelines, load balancers, buckets, webhooks, usage alerts, repository files, users, API keys and more.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "Operation ID from sevalla_api_search, e.g. listProjectsV3."
+          },
+          "path_params": {
+            "description": "Path parameters by name, e.g. {\"id\": \"…\"}.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "query": {
+            "description": "Query parameters by name.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Read from the Sevalla API",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sevalla_api_create",
+      "title": "Create through the Sevalla API",
+      "description": "Runs one operation of the Sevalla API v3 (reference: https://api-docs.sevalla.com) that only adds something new, by operation ID: a project, pipeline, process, backup, bucket, webhook, load balancer and the like. New resources may be billed.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "Operation ID from sevalla_api_search, e.g. listProjectsV3."
+          },
+          "path_params": {
+            "description": "Path parameters by name, e.g. {\"id\": \"…\"}.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "query": {
+            "description": "Query parameters by name.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "body": {
+            "description": "JSON request body.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Create through the Sevalla API",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sevalla_api_update",
+      "title": "Update through the Sevalla API",
+      "description": "Runs one operation of the Sevalla API v3 (reference: https://api-docs.sevalla.com) that changes existing state, by operation ID: settings updates, suspend or activate, database restart or backup restore, pipeline promotion, cache purges, maintenance mode, or a command in a running process (execProcessCommandV3).",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "Operation ID from sevalla_api_search, e.g. listProjectsV3."
+          },
+          "path_params": {
+            "description": "Path parameters by name, e.g. {\"id\": \"…\"}.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "query": {
+            "description": "Query parameters by name.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "body": {
+            "description": "JSON request body.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Update through the Sevalla API",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sevalla_api_delete",
+      "title": "Delete through the Sevalla API",
+      "description": "Permanently deletes one resource through an operation of the Sevalla API v3 (reference: https://api-docs.sevalla.com) by operation ID: from a domain, process, backup, webhook or API key up to an entire application, static site, database, pipeline, project, load balancer or bucket.",
+      "inputSchema": {
+        "type": "object",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]+$",
+            "description": "Operation ID from sevalla_api_search, e.g. listProjectsV3."
+          },
+          "path_params": {
+            "description": "Path parameters by name, e.g. {\"id\": \"…\"}.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "query": {
+            "description": "Query parameters by name.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean"
+              ]
+            }
+          },
+          "body": {
+            "description": "JSON request body.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "title": "Delete through the Sevalla API",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "_meta": {
+        "securitySchemes": [
+          {
+            "type": "oauth2",
+            "scopes": [
+              "mcp:tools"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
