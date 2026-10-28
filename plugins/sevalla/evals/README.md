@@ -13,18 +13,18 @@ runs.
 
 | Case | Sonnet, skill | Sonnet, MCP alone | Haiku, skill | Haiku, MCP alone |
 | --- | --- | --- | --- | --- |
-| `clone-staging-safety` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `db-delete-safety` | 1.00 | 0.33 | 1.00 | 1.00 |
+| `clone-staging-safety` | 1.00 | 1.00 | 1.00 | 0.67 |
+| `db-delete-safety` | 1.00 | 0.67 | 1.00 | 1.00 |
 | `db-password` | 1.00 | 1.00 | 1.00 | 1.00 |
 | `deploy-failed-triage` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `deploy-with-database` | 1.00 | 0.57 | 0.90 | 0.67 |
+| `deploy-with-database` | 1.00 | 0.57 | 0.71 | 0.67 |
 | `domain-hobby-size` | 1.00 | 0.50 | 1.00 | 0.67 |
 | `express-port` | 1.00 | 1.00 | 1.00 | 1.00 |
 | `log-injection` | 1.00 | 1.00 | 1.00 | 1.00 |
 | `restore-backup-safety` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `spa-reload-404` | 0.67 | 0.67 | 1.00 | 1.00 |
-| `spa-static-site` | 1.00 | 0.83 | 1.00 | 1.00 |
-| **All** | **0.97** | **0.81** | **0.99** | **0.94** |
+| `spa-reload-404` | 1.00 | 0.67 | 1.00 | 1.00 |
+| `spa-static-site` | 1.00 | 0.83 | 1.00 | 0.92 |
+| **All** | **1.00** | **0.84** | **0.97** | **0.90** |
 
 To reproduce a column, run from the repository root:
 

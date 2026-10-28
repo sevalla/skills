@@ -86,8 +86,8 @@ returns its secret URL to you: let the user do it on the app's **Settings** tab 
 | Turn the sevalla.app domain on or off (flips the current state) | `toggleApplicationSystemDomainV3` | `sevalla_api_update` |
 | Connect an app to an existing database or app | `createApplicationInternalConnectionV3` (`target_id`, `target_type`: `database` or `app`) | `sevalla_api_create` |
 | An app's internal connections | `listApplicationInternalConnectionsV3` | `sevalla_api_read` |
-| IP allow or deny list, rate limiting | `updateApplicationIpRestrictionV3`, `updateApplicationRateLimitV3` | `sevalla_api_update` |
-| Their current settings | `getApplicationIpRestrictionV3`, `getApplicationRateLimitV3` | `sevalla_api_read` |
+| IP allow or deny list | `updateApplicationIpRestrictionV3` | `sevalla_api_update` |
+| Its current setting | `getApplicationIpRestrictionV3` | `sevalla_api_read` |
 | Outbound IPs | `getApplicationEgressIpsV3` | `sevalla_api_read` |
 | Private port | `createApplicationPrivatePortV3` (`process_id`, `port`) | `sevalla_api_create` |
 | TCP proxy | `createApplicationTcpProxyV3` (`process_id`, `port`) | `sevalla_api_update` |
@@ -125,7 +125,6 @@ both at once.
 | Pretty URLs (`/about` for `about.html`; flips the current state) | `toggleStaticSitePrettyUrlV3` | `sevalla_api_update` |
 | Domains | `listStaticSiteDomainsV3` | `sevalla_api_read` |
 | Check DNS again, make primary | `refreshStaticSiteDomainStatusV3`, `setStaticSitePrimaryDomainV3` | `sevalla_api_update` |
-| Rate limiting | `updateStaticSiteRateLimitV3` | `sevalla_api_update` |
 | Delete (confirm first) | `deleteStaticSiteV3` | `sevalla_api_delete` |
 
 ## Object storage and load balancers

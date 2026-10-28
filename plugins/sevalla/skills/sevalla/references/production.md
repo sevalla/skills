@@ -150,7 +150,6 @@ and check the data there first. Restoring into another database replaces everyth
 | Connect an app to a database or app privately (same location) | `createApplicationInternalConnectionV3` |
 | Reach a database from outside (migrations from a laptop, a BI tool) | `toggleDatabaseExternalConnectionV3`; turn it off afterwards |
 | Allow or deny IP addresses | `updateApplicationIpRestrictionV3` (`type`, `is_enabled`, `ip_list`), `updateDatabaseIpRestrictionV3` |
-| Limit abusive traffic (100 requests a minute per IP) | `updateApplicationRateLimitV3` (`is_enabled`, `action`: `challenge`, `throttle` or `ban`) |
 | The IPs the app connects out from, for a partner's allowlist | `getApplicationEgressIpsV3` |
 | A non-HTTP port (TCP) from the internet | `createApplicationTcpProxyV3` |
 | A port only other services reach | `createApplicationPrivatePortV3` |

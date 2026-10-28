@@ -33,7 +33,7 @@ These hold for every Sevalla task, including quick ones.
    the effect: deleting anything, restoring a backup (it overwrites the data), resetting a database
    password (connected apps lose access until updated), rotating keys or credentials, suspending,
    rolling back, cancelling a deployment, removing a domain. Before deleting a database, show what
-   still uses it (`get_database` lists its internal connections) and offer a backup first.
+   still uses it (`get_database` lists its internal connections).
 4. **Use the narrowest operation** for the intent. See [Pick the right operation](#pick-the-right-operation).
 5. **Keep secrets out of the conversation.** Never print environment variable values, database
    passwords, API keys or deploy hook URLs. Let `create_database` with
@@ -105,7 +105,7 @@ Several requests have an operation of their own that a nearby tool only approxim
 | Before | Check |
 | --- | --- |
 | `add_domain` on an application | The web process's size in `get_application`. Custom domains don't work with an `h1` web process: say so, and offer a bigger size before adding it |
-| Deleting a database | Its internal connections in `get_database`: name every app that still uses it, offer a backup, and wait for a yes even when the user asked to delete it |
+| Deleting a database | Its internal connections in `get_database`: name every app that still uses it, and wait for a yes even when the user asked to delete it |
 | Cloning an application | Its variables and jobs: a clone copies `DATABASE_URL`, the migration job and auto-deploy (see [deploy.md](references/deploy.md#pipelines-and-preview-apps)) |
 | Restoring a backup | A manual backup of the current data, listed by `get_database` before you restore (see [production.md](references/production.md#database-backups-and-restores)) |
 | A `toggle...` operation | The current state: toggles flip it |

@@ -104,7 +104,7 @@ Variable changes apply at the next deployment, as with every interface.
 
 ## Operations without a command
 
-Running a command in a process, maintenance mode, rate limits and egress IPs go through the REST
+Running a command in a process, maintenance mode and egress IPs go through the REST
 API. Find the operation's method and path by its ID in https://api.sevalla.com/v3/openapi.json.
 `sevalla login` doesn't set `SEVALLA_API_TOKEN`; it stores the key in
 `~/.config/sevalla/credentials.json`. Read it inside the same command, so it's never printed:
