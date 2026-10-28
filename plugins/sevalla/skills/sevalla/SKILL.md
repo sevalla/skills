@@ -103,7 +103,7 @@ Several requests have an operation of their own that a nearby tool only approxim
 
 | Before | Check |
 | --- | --- |
-| `add_domain` on an application | The web process's size in `get_application`. On `h1` the domain is accepted but never serves: say so, and offer a bigger size before adding it |
+| `add_domain` on an application | The web process's size in `get_application`. Custom domains don't work with an `h1` web process: say so, and offer a bigger size before adding it |
 | Deleting a database | Its internal connections in `get_database`: name every app that still uses it, offer a backup, and wait for a yes even when the user asked to delete it |
 | Cloning an application | Its variables and jobs: a clone copies `DATABASE_URL`, the migration job and auto-deploy (see [deploy.md](references/deploy.md#pipelines-and-preview-apps)) |
 | Restoring a backup | A manual backup of the current data, listed by `get_database` before you restore (see [production.md](references/production.md#database-backups-and-restores)) |
@@ -164,7 +164,7 @@ once.
 | Instances restart, exit code 137 | `get_metrics` (target `process`: `memory_usage_bytes`, `exit_codes`) | Out of memory: a bigger size with `scale_process` |
 | Slow responses or errors | `get_metrics` (target `application`), `search_access_logs` with `status: "5xx"` | A slow route, the database, or too few instances |
 | Variable change has no effect | `list_deployments` | Variables apply at the next deployment |
-| Custom domain not working | `get_application` (web process size, DNS records, verification errors) | The `h1` size (the domain is accepted but blocked), DNS records missing, a CAA record |
+| Custom domain not working | `get_application` (web process size, DNS records, verification errors) | An `h1` web process (custom domains don't work with it), DNS records missing, a CAA record |
 
 Don't filter build or runtime logs with `errors_only` or `severity: "ERROR"`: everything written
 to stderr counts as an error, so these return pages of normal output. Use `search` with the

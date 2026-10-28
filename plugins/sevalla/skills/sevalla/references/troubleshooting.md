@@ -118,7 +118,8 @@ checks again now; Sevalla also checks every 30 minutes for 7 days.
 
 | Problem | Fix |
 | --- | --- |
-| Added but never serves, on an app whose web process is `h1` | The API accepts the domain, then Sevalla blocks it on the Hobby size. A bigger size with `scale_process` (it costs more: ask) |
+| A custom domain on an app whose web process is `h1` | Custom domains don't work with `h1`: a bigger size with `scale_process` (it costs more: ask) |
+| `Cannot create hobby process because app has custom domain` | A process change keeps or moves the web process to `h1` while the app has a custom domain: keep a bigger size, or remove the domain first |
 | Stays in verification | An old `A` or `CNAME` record still on the name; a doubled record name (`shop.example.com.example.com`); old `_acme-challenge` records; a proxied (orange cloud) Cloudflare record |
 | Verification timed out after 7 days | Delete the domain and add it again: every attempt gets new record values |
 | SSL won't issue | A `CAA` record that doesn't allow Sevalla's certificate authority: add `0 issue "pki.goog"` |

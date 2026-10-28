@@ -33,10 +33,11 @@ https://docs.sevalla.com/applications/go-live-checklist.md):
 
 ## Custom domains
 
-Before `add_domain`, check the web process's size in `get_application`. A custom domain needs a
-size above `h1` and a company with a payment method or credits. On `h1`, the API accepts the
-domain but Sevalla blocks it, and it never serves: move the process to a bigger size first,
-after the user agrees to the cost.
+Before `add_domain`, check the web process's size in `get_application`. Custom domains don't work
+with an `h1` web process, and need a company with a payment method or credits. Move the process
+to a bigger size first, after the user agrees to the cost. The dashboard refuses a domain on `h1`
+but the API doesn't check; once an app has a custom domain, every change that keeps its web
+process on `h1` fails with `Cannot create hobby process because app has custom domain`.
 
 `add_domain` with the domain (`wildcard: true` for all subdomains) returns the DNS records to
 create at the user's DNS provider: an ownership `TXT` record (`_cf-custom-hostname`), an SSL
@@ -79,7 +80,7 @@ or `exec` probe is accepted and then silently dropped.
 ```json
 {
   "readiness_probe": {
-    "httpGet": { "path": "/healthz", "port": 8080 },
+    "httpGet": { "path": "/healthz" },
     "initialDelaySeconds": 5,
     "periodSeconds": 10,
     "timeoutSeconds": 2,
@@ -88,6 +89,7 @@ or `exec` probe is accepted and then silently dropped.
 }
 ```
 
+`port` defaults to the process's own port; set it only if the health endpoint listens elsewhere.
 Set `timeoutSeconds`: left out, the platform waits far longer than a health check should. Probe an
 endpoint that doesn't depend on third-party services, so one outage elsewhere doesn't restart
 every instance.
@@ -171,7 +173,9 @@ limit.
 
 Every connection is limited by its API key. For an agent that only reads, the **Company viewer**
 role. For CI, custom capabilities limited to the one application it deploys:
-`[{ "permission": "APP:UPDATE", "resource_id": "<app-id>" }]`. The user creates keys under
+`APP:UPDATE` to start a deployment and `APP:READ` to follow it:
+`[{ "permission": "APP:READ", "resource_id": "<app-id>" }, { "permission": "APP:UPDATE", "resource_id": "<app-id>" }]`.
+The user creates keys under
 **Tools** > **API keys** in the dashboard: `createApiKeyV3` would return the token to you.
 `rotateApiKeyV3` takes `old_token_ttl_hours`; it defaults to 0, which revokes the old token at
 once, so give CI time to switch over.

@@ -1,5 +1,1 @@
----
-error: true
----
-
-This tool is not part of this test scenario.
+{"note":"The change takes effect at the next deployment of each affected service."}

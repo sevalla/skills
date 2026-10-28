@@ -74,10 +74,11 @@ printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol
 
 Each case in `plugins/sevalla/evals/` is a prompt, graders, and fixed answers for the MCP tools it
 needs, so runs never reach a Sevalla account. Cases with a `scaffold.sh` build a small project in
-the workspace first. Every other tool answers from `evals/mocks/sevalla/` with "not part of this
-test scenario", so a "must not call" grader can fail. Keep mock answers in the real tools' format
-(capture them from the MCP server where you can, as the `sevalla_api_search` mocks are), and don't
-put the answer in a field the real tool doesn't have.
+the workspace first. Every other tool answers from `evals/mocks/sevalla/`: read tools with the MCP
+server's real `404` message, write tools with a plausible success, so a "must not call" grader can
+fail. Keep mock answers in the real tools' format (capture them from the MCP server running against
+its fake API, `test/support/fake-api.ts` in the MCP repository), and don't put the answer in a field
+the real tool doesn't have.
 
 The comparison that matters is the skill against the MCP server alone. `claude plugin eval`'s
 default baseline runs without the plugin, and so without the MCP server too. Run the suite twice

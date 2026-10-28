@@ -1,5 +1,1 @@
----
-error: true
----
-
-This tool is not part of this test scenario.
+{"database":{"id":"33333333-3333-4333-8333-999999999990","name":"new-db-x1y2z","display_name":"{{input.display_name}}","type":"{{input.type}}","status":"creating","size":"db-1"},"note":"Provisioning takes a few minutes; get_database reports when the database is ready."}

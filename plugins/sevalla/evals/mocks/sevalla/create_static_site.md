@@ -1,5 +1,1 @@
----
-error: true
----
-
-This tool is not part of this test scenario.
+{"static_site":{"id":"66666666-6666-4666-8666-999999999990","name":"new-site-x1y2z","display_name":"{{input.display_name}}","status":"deploymentInProgress","hostname":"new-site-x1y2z.sevalla.page","default_branch":"{{input.default_branch}}"},"note":"The first build starts automatically; list_deployments reports its progress."}

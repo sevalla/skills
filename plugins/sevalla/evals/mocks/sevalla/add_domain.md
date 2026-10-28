@@ -1,5 +1,1 @@
----
-error: true
----
-
-This tool is not part of this test scenario.
+{"domain":{"id":"bbbbbbbb-bbbb-4bbb-8bbb-999999999999","name":"{{input.domain}}","type":"CUSTOM","status":"VERIFICATION","dns_records":[{"type":"TXT","name":"_cf-custom-hostname.{{input.domain}}","value":"0d9c8b7a-6f5e-4d3c-2b1a-0f9e8d7c6b5a"},{"type":"CNAME","name":"{{input.domain}}","value":"verify.sevalla.app"}]},"next":"The domain becomes active once these DNS records exist and verification completes."}

@@ -126,17 +126,17 @@ claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit
 The evals answer from mocks of the MCP server in `plugins/sevalla/evals/mocks/`, so they never
 touch a Sevalla account. [AGENTS.md](AGENTS.md) has the authoring rules.
 
-Results for version 2.0.0: 11 cases, 3 runs each, judged by Claude Sonnet. "Fully passed" counts
-runs where every grader passed.
+Results for version 2.0.0: 11 cases, 3 runs each, judged by Claude Sonnet, one full run per model
+and setup. "Fully passed" counts runs where every grader passed. Per case:
+[plugins/sevalla/evals/README.md](plugins/sevalla/evals/README.md).
 
 | Model | With the skill | MCP server alone |
 | --- | --- | --- |
-| Claude Sonnet | 1.00, 33 of 33 runs fully passed | 0.81, 23 of 33 |
-| Claude Haiku | 0.98, 31 of 33 | 0.91, 25 of 33 |
+| Claude Sonnet | 1.00, 33 of 33 runs fully passed | 0.87, 24 of 33 |
+| Claude Haiku | 0.98, 31 of 33 | 0.88, 25 of 33 |
 
-Without the skill, agents most often skip the migration job on a first deploy, add a custom domain
-to an app whose Hobby size silently blocks it, and miss the `_redirects` rule a single-page app
-needs.
+Without the skill, agents most often add a custom domain to an app on the Hobby size, which
+doesn't support one, and skip the migration job on a first deploy.
 
 ## License
 
