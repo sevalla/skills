@@ -145,10 +145,11 @@ active. Then request `/` and one route that reads from the database.
 `create_static_site` with `display_name`, `repo_url`, `default_branch`, and set the build
 yourself: `build_command`, `published_directory` (`dist`, `build`, `out`, `public`),
 `node_version` (required whenever there is a build or install command: `16`, `18`, `20`, `22`,
-`lts` or `latest`; static sites ignore `engines.node`), `install_command`, and `root_directory` for a monorepo. Without a
-`build_command`, nothing is built and the repository's files are published as they are. Then
-check `list_deployments`: if no deployment started, start one with `trigger_deployment`. The
-site's address is `https://<name>.sevalla.page`, in `get_static_site`.
+`lts` or `latest`; static sites ignore `engines.node`), `install_command`, and `root_directory`
+for a monorepo. Without a `build_command`, nothing is built and the repository's files are
+published as they are. A new site isn't deployed unless you pass `deploy: true`; otherwise start
+its first deployment with `trigger_deployment`, then follow it with `get_deployment`. The site's
+address is `https://<name>.sevalla.page`, in `get_static_site`.
 
 - A single-page app whose router handles paths in the browser needs a `_redirects` file in the
   publish directory with `/*    /index.html    200`. Many generators copy `public/` into the output.

@@ -133,7 +133,8 @@ detail for each step, static sites, Docker images, monorepos and CI/CD.
    `privateGit` (`publicGit` only when Sevalla has no access to a public repository: see
    [deploy.md](references/deploy.md#applications)). Then set what the build needs: `build_path`
    for a subfolder, `build_type` for a Dockerfile (`updateApplicationV3`), and `auto_deploy` if
-   the user wants every push to deploy.
+   the user wants every push to deploy. A static site is `create_static_site` with its build
+   settings ([deploy.md](references/deploy.md#static-sites)); it deploys only with `deploy: true`.
 6. **Add a database if the app needs one.** If the user didn't ask for one, ask first: a new one
    (which engine and size) or an existing one. Then `create_database` with
    `connect_to_application_id`, which connects them and stores the URL in `DATABASE_URL` (pass

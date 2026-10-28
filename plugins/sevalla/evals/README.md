@@ -14,17 +14,17 @@ runs.
 | Case | Sonnet, skill | Sonnet, MCP alone | Haiku, skill | Haiku, MCP alone |
 | --- | --- | --- | --- | --- |
 | `clone-staging-safety` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `db-delete-safety` | 1.00 | 0.67 | 1.00 | 1.00 |
+| `db-delete-safety` | 1.00 | 0.33 | 1.00 | 1.00 |
 | `db-password` | 1.00 | 1.00 | 1.00 | 1.00 |
 | `deploy-failed-triage` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `deploy-with-database` | 0.95 | 0.62 | 0.81 | 0.67 |
-| `domain-hobby-size` | 1.00 | 0.50 | 1.00 | 0.83 |
+| `deploy-with-database` | 1.00 | 0.57 | 0.90 | 0.67 |
+| `domain-hobby-size` | 1.00 | 0.50 | 1.00 | 0.67 |
 | `express-port` | 1.00 | 1.00 | 1.00 | 1.00 |
 | `log-injection` | 1.00 | 1.00 | 1.00 | 1.00 |
 | `restore-backup-safety` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `spa-reload-404` | 1.00 | 1.00 | 1.00 | 1.00 |
-| `spa-static-site` | 0.83 | 0.50 | 0.83 | 0.67 |
-| **All** | **0.98** | **0.84** | **0.97** | **0.92** |
+| `spa-reload-404` | 0.67 | 0.67 | 1.00 | 1.00 |
+| `spa-static-site` | 1.00 | 0.83 | 1.00 | 1.00 |
+| **All** | **0.97** | **0.81** | **0.99** | **0.94** |
 
 To reproduce a column, run from the repository root:
 
@@ -37,6 +37,4 @@ Model answers vary between runs, so a rerun lands near these numbers, not on the
 
 Fixed answers can't follow a change of state. In `deploy-with-database`, `list_services` doesn't
 show the application the agent just created, and the logs don't show its migration job running, so
-a careful agent sometimes reports the deployment as unconfirmed. In `spa-static-site`, the
-`create_static_site` answer says the first build starts automatically, as the MCP server's does
-today, while the API starts none: the agent has to notice and start it.
+a careful agent sometimes reports the deployment as unconfirmed.

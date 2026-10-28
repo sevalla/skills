@@ -296,7 +296,7 @@
     {
       "name": "get_deployment",
       "title": "Get Sevalla deployment",
-      "description": "Returns a deployment of a Sevalla application or static site: status, steps, branch, commit, image and timing. It reports the progress of deployments started by trigger_deployment or rollback_deployment. Output and failure causes: get_deployment_logs.",
+      "description": "Returns a deployment of a Sevalla application or static site: status, steps, branch, commit, image and timing. Output and failure causes: get_deployment_logs.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1271,7 +1271,7 @@
     {
       "name": "create_static_site",
       "title": "Create Sevalla static site",
-      "description": "Creates a Sevalla static site from a Git repository and starts its first build.",
+      "description": "Creates a Sevalla static site from a Git repository and optionally deploys it.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1380,6 +1380,11 @@
           "project_id": {
             "type": "string",
             "description": "Project to add the service to."
+          },
+          "deploy": {
+            "default": false,
+            "description": "Start the first deployment.",
+            "type": "boolean"
           }
         },
         "required": [
