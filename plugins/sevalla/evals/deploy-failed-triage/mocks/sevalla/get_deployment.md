@@ -1,1 +1,1 @@
-{"id":"55555555-5555-4555-8555-666666666666","status":"failed","branch":"main","commit":"9f2c4e1","created_at":"2026-10-28T06:02:00Z","finished_at":"2026-10-28T06:24:10Z","steps":["build","deploy"]}
+{"id":"55555555-5555-4555-8555-666666666666","status":"failed","type":"manual","trigger":"MANUAL_DEPLOY","branch":"main","commit":"9f2c4e1","commit_message":"Move server bootstrap into src/server.ts","author":"octocat","created_at":"2026-10-28T06:02:00.000Z","started_at":"2026-10-28T06:02:05.000Z","finished_at":"2026-10-28T06:24:10.000Z","steps":["checkout","build","deploy"]}

@@ -1,1 +1,1 @@
-{"updated":["DATABASE_URL"],"created":[],"note":"Changes apply at the next deployment."}
+{"updated":["DATABASE_URL"],"note":"The change takes effect at the next deployment of each affected service."}

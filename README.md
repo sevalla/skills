@@ -25,18 +25,24 @@ also connects the [Sevalla MCP server](https://github.com/sevalla/mcp).
 In Claude Code, install the plugin. It adds the skill and the Sevalla MCP server:
 
 ```sh
-claude plugin marketplace add sevalla/skills
-claude plugin install sevalla@sevalla-skills
+claude plugin install sevalla --marketplace sevalla/skills
 ```
 
 Or, inside Claude Code, `/plugin install sevalla --marketplace sevalla/skills`.
 
-For other agents, add the skill with the [skills CLI](https://github.com/vercel-labs/skills), then
-connect the agent to the MCP server with its
-[setup guide](https://docs.sevalla.com/ai-agents/overview):
+For Codex, Cursor, OpenCode and other agents, add the skill with the
+[skills CLI](https://github.com/vercel-labs/skills), then connect the agent to the MCP server with
+its [setup guide](https://docs.sevalla.com/ai-agents/overview):
 
 ```sh
 npx skills add sevalla/skills
+```
+
+Without Node.js, copy the skill folder into the folder your agent loads skills from:
+
+```sh
+git clone https://github.com/sevalla/skills.git
+cp -R skills/plugins/sevalla/skills/sevalla ~/.claude/skills/
 ```
 
 ## Quick start
@@ -119,6 +125,18 @@ claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit
 
 The evals answer from mocks of the MCP server in `plugins/sevalla/evals/mocks/`, so they never
 touch a Sevalla account. [AGENTS.md](AGENTS.md) has the authoring rules.
+
+Results for version 2.0.0: 11 cases, 3 runs each, judged by Claude Sonnet. "Fully passed" counts
+runs where every grader passed.
+
+| Model | With the skill | MCP server alone |
+| --- | --- | --- |
+| Claude Sonnet | 1.00, 33 of 33 runs fully passed | 0.81, 23 of 33 |
+| Claude Haiku | 0.98, 31 of 33 | 0.91, 25 of 33 |
+
+Without the skill, agents most often skip the migration job on a first deploy, add a custom domain
+to an app whose Hobby size silently blocks it, and miss the `_redirects` rule a single-page app
+needs.
 
 ## License
 

@@ -1,1 +1,1 @@
-{"id":"55555555-5555-4555-8555-444444444444","status":"waiting","note":"get_deployment reports progress."}
+{"deployment":{"id":"55555555-5555-4555-8555-444444444444","status":"waiting","type":"manual","trigger":"ROLLBACK_DEPLOYMENT","branch":"main","created_at":"2026-10-28T06:02:00.000Z","started_at":"2026-10-28T06:02:05.000Z"},"next":"get_deployment reports progress."}

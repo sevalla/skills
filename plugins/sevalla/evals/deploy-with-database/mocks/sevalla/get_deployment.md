@@ -1,1 +1,1 @@
-{"id":"55555555-5555-4555-8555-cccccccccccc","status":"success","branch":"main","steps":[{"name":"build","status":"success","duration_seconds":131},{"name":"job:migrate","status":"success"},{"name":"rollout","status":"success"}],"finished_at":"2026-10-28T07:31:40Z"}
+{"id":"55555555-5555-4555-8555-cccccccccccc","status":"success","type":"manual","trigger":"MANUAL_DEPLOY","branch":"main","created_at":"2026-10-28T06:02:00.000Z","started_at":"2026-10-28T06:02:05.000Z","finished_at":"2026-10-28T06:24:10.000Z","steps":["checkout","build","deploy"]}

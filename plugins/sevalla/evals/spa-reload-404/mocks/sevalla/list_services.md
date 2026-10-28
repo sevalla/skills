@@ -1,0 +1,1 @@
+{"applications":{"total":0,"items":[]},"static_sites":{"total":1,"items":[{"id":"66666666-6666-4666-8666-999999999999","name":"storefront-web-m4t8x","display_name":"storefront-web","status":"deploymentSuccess"}]},"databases":{"total":0,"items":[]}}
