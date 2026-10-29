@@ -29,8 +29,9 @@ older versions run irreversible commands without asking for `--confirm`.
 
 ## Deploy an application with a database
 
-Each command runs in a new shell, so keep the database password in a file only you can read,
-outside the repository, and delete it at the end.
+Each command runs in a new shell, so the database password goes into an app variable in the same
+command that creates the database, and the connection URL refers to that variable. The password
+never reaches a file or the conversation.
 
 ```sh
 # Signed in?
@@ -47,10 +48,8 @@ sevalla apps create --name storefront --cluster <cluster-id> --source privateGit
 # Only for an app in a subfolder of the repository
 sevalla apps update <app-id> --data '{"build_path":"apps/web"}' --json
 
-# A password the CLI will never show again, kept out of the conversation
-(umask 077 && openssl rand -hex 16 > ~/.sevalla-storefront-db-password)
-
-sevalla databases create --name storefront-db --type postgresql --db-version 17 --cluster <cluster-id> --resource-type <db-size-id> --db-name storefront --db-user storefront --db-password "$(cat ~/.sevalla-storefront-db-password)" --json
+# The database; its password goes only into the app's DB_PASSWORD variable
+p=$(openssl rand -hex 16) && sevalla databases create --name storefront-db --type postgresql --db-version 17 --cluster <cluster-id> --resource-type <db-size-id> --db-name storefront --db-user storefront --db-password "$p" --json && sevalla apps env-vars create <app-id> --key DB_PASSWORD --value "$p" --json
 
 # Repeat until its status is ready; note internal_hostname and internal_port
 sevalla databases get <db-id> --json
@@ -58,10 +57,11 @@ sevalla databases get <db-id> --json
 # Connect them. This adds no variable to the app
 sevalla databases connections internal-create <db-id> --target-id <app-id> --target-type app --json
 
-# The connection URL, before the first build
-sevalla apps env-vars create <app-id> --key DATABASE_URL --value "postgresql://storefront:$(cat ~/.sevalla-storefront-db-password)@<internal-hostname>:<internal-port>/storefront" --json
+# The connection URL, before the first build. Keep the single quotes: Sevalla fills in
+# ${DB_PASSWORD} when it deploys
+sevalla apps env-vars create <app-id> --key DATABASE_URL --value 'postgresql://storefront:${DB_PASSWORD}@<internal-hostname>:<internal-port>/storefront' --json
 
-# Migrations before each deployment
+# Only if the project has migrations and nothing runs them yet: run them before each deployment
 sevalla apps processes create <app-id> --name migrate --type job --job-start-policy beforeDeployment --command "npm run migrate" --resource-type <size-id> --json
 
 # Deploy, then repeat the get every 20 to 30 seconds until success, failed, cancelled or skipped
@@ -74,8 +74,6 @@ sevalla apps get <app-id> --json
 
 # The runtime output
 sevalla apps logs runtime <app-id> --json
-
-rm ~/.sevalla-storefront-db-password
 ```
 
 ## Everyday commands
@@ -106,9 +104,9 @@ Variable changes apply at the next deployment, as with every interface.
 
 Running a command in a process, maintenance mode and egress IPs go through the REST
 API. Find the operation's method and path by its ID in https://api.sevalla.com/v3/openapi.json.
-`sevalla login` doesn't set `SEVALLA_API_TOKEN`; it stores the key in
-`~/.config/sevalla/credentials.json`. Read it inside the same command, so it's never printed:
+These need an API key in `SEVALLA_API_TOKEN`. If it isn't set, ask the user to set it; don't read
+the CLI's credentials file:
 
 ```sh
-curl -sS -X PUT https://api.sevalla.com/v3/applications/<app-id>/maintenance-mode -H "Authorization: Bearer ${SEVALLA_API_TOKEN:-$(jq -r .token ~/.config/sevalla/credentials.json)}" -H "Content-Type: application/json" -d '{"is_enabled": true}'
+curl -sS -X PUT https://api.sevalla.com/v3/applications/<app-id>/maintenance-mode -H "Authorization: Bearer $SEVALLA_API_TOKEN" -H "Content-Type: application/json" -d '{"is_enabled": true}'
 ```

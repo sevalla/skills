@@ -502,7 +502,7 @@
     {
       "name": "rollback_deployment",
       "title": "Roll back Sevalla service",
-      "description": "Rolls a Sevalla application or static site back to an earlier successful deployment. Applications redeploy the build of their most recent successful one. Static sites rebuild the commit of deployment_id or, by default, of the last successful one before the current, with the current settings and variables. get_deployment reports progress.",
+      "description": "Rolls a Sevalla application or static site back to an earlier successful deployment. Applications reuse the build of the last successful deployment of another commit (not found if none). Static sites rebuild the commit of deployment_id or, by default, of the last successful one before the current, with the current settings and variables.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1531,7 +1531,7 @@
             "type": "string",
             "minLength": 2,
             "maxLength": 200,
-            "description": "What to look up, e.g. \"nixpacks node version\"."
+            "description": "What to look up, e.g. \"build node version\"."
           },
           "limit": {
             "default": 3,
@@ -1567,7 +1567,7 @@
     {
       "name": "sevalla_api_search",
       "title": "Search Sevalla API operations",
-      "description": "Searches all 252 operations of the Sevalla API v3 (reference: https://api-docs.sevalla.com), including those behind dedicated tools, by keywords and returns their IDs, parameters, body fields and the tool that runs each. 180 have no dedicated tool, among them the clone, suspend, cancel and promote operations. operation_id returns one operation in full. It reads the API reference, not the account.",
+      "description": "Searches all 249 operations of the Sevalla API v3 (reference: https://api-docs.sevalla.com), including those behind dedicated tools, by keywords and returns their IDs, parameters, body fields and the tool that runs each. 177 have no dedicated tool, among them the clone, suspend, cancel and promote operations. operation_id returns one operation in full. It reads the API reference, not the account.",
       "inputSchema": {
         "type": "object",
         "$schema": "https://json-schema.org/draft/2020-12/schema",

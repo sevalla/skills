@@ -179,9 +179,10 @@ for (const [file, text] of texts) {
     }
   }
 
-  const commandLines = [...text.matchAll(/^[ \t]*(sevalla [^\n]+)$/gm), ...text.matchAll(/`(sevalla [^`]+)`/g)].map(
-    (m) => m[1],
-  )
+  const commandLines = [...text.split('\n'), ...[...text.matchAll(/`(sevalla [^`]+)`/g)].map((m) => m[1])]
+    .flatMap((line) => line.split(/&&|\|\||;/))
+    .map((part) => part.trim())
+    .filter((part) => part.startsWith('sevalla '))
   for (const line of commandLines) {
     const words = line.split(/\s+/)
     let command: CliCommand | undefined
