@@ -69,8 +69,10 @@ An application has one `web` process and any number of others, sharing its build
 | `cron` | A command on a schedule | `schedule` (5-field cron), `time_zone` (IANA), `concurrency_policy` |
 | `job` | A command at each deployment | `job_start_policy`: `beforeDeployment`, `afterSuccessDeployment` or `afterFailedDeployment` |
 
-Run migrations as a `beforeDeployment` job: a failed migration stops the deployment and the
-previous version keeps running.
+Keep the way the project already runs migrations. When it has migrations and nothing runs them
+on deploy, a `beforeDeployment` job is the usual place: it runs once per deployment, before the new
+version goes live, and a failed migration stops the deployment while the previous version keeps
+running.
 
 - A job has 10 minutes by default; `active_deadline_seconds` on the process changes it.
 - A job's own output is in the runtime logs (`search_runtime_logs` around the deployment's time).
@@ -119,8 +121,10 @@ its variable is updated. Ask first.
 
 ## Follow a deployment
 
-`trigger_deployment` returns a deployment. Poll `get_deployment` every 20 to 30 seconds until it
-reaches `success`, `failed`, `cancelled` or `skipped`.
+`trigger_deployment` returns a deployment. Check it with `get_deployment` until it reaches
+`success`, `failed`, `cancelled` or `skipped`, and report as soon as it does. Between checks, wait
+in one shell command (`sleep 60`): each check is a turn, so checking again at once costs more and
+finishes no sooner. Without a shell, check every 30 seconds.
 
 | Status | Meaning |
 | --- | --- |

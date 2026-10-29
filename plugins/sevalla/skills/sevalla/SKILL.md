@@ -122,9 +122,9 @@ detail for each step, static sites, Docker images, monorepos and CI/CD.
    after the build (an SPA, a static export, a docs site) is a **static site**; anything with
    server code, SSR, API routes, websockets or a database is an **application**.
 2. **Make it run on Sevalla.** The web process must listen on `0.0.0.0` and on the port in
-   `PORT` (Sevalla sets it, default 8080). Pin the runtime version. Run migrations in a `job`
-   process that runs before each deployment, not in the build. Commit and push: Sevalla builds
-   from the Git remote, never from local files. Ask before you push if the user didn't say to.
+   `PORT` (Sevalla sets it, default 8080). Pin the runtime version. Keep the way the project
+   already runs migrations. Commit and push: Sevalla builds from the Git remote, never from local
+   files. Ask before you push if the user didn't say to.
    Framework specifics: [references/frameworks.md](references/frameworks.md).
 3. **Check what exists.** `list_services`: reuse a matching app instead of creating a duplicate.
 4. **Pick the location.** `get_platform_options`, closest to the user's visitors. The location
@@ -140,14 +140,17 @@ detail for each step, static sites, Docker images, monorepos and CI/CD.
    `connect_to_application_id`, which connects them and stores the URL in `DATABASE_URL` (pass
    `env_var_name: "REDIS_URL"` for Redis or Valkey). Check `connection.env_var` in the result, and
    wait until `get_database` shows `ready`.
-7. **Add the migration job** if the app has migrations: a `job` process with
-   `job_start_policy: "beforeDeployment"` (`createProcessV3`, see
-   [deploy.md](references/deploy.md#processes-workers-cron-jobs-and-migrations)).
+7. **Migrations.** If the project already runs them (in its start command, its build, CI or by
+   hand), leave that as it is. Only when it has migrations and nothing runs them on deploy, add a
+   `job` process with `job_start_policy: "beforeDeployment"` (`createProcessV3`, see
+   [deploy.md](references/deploy.md#processes-workers-cron-jobs-and-migrations)) and tell the
+   user.
 8. **Set the other environment variables before the first build**: `set_environment_variables`.
    Values the build inlines (`NEXT_PUBLIC_*`, `VITE_*`) only reach builds that start afterwards.
-9. **Deploy and follow it**: `trigger_deployment`, then `get_deployment` every 20 to 30 seconds
-   until `success`, `failed`, `cancelled` or `skipped`. A build usually takes 2 to 5 minutes, and
-   a deployment fails after 30.
+9. **Deploy and follow it**: `trigger_deployment`, then `get_deployment` until `success`,
+   `failed`, `cancelled` or `skipped`. Between checks, wait in one shell command (`sleep 60`)
+   rather than checking again at once; without a shell, check every 30 seconds. Report as soon as
+   it gets there.
 10. **Verify and report.** Request the app's `sevalla.app` URL (from `get_application`) and a
     route that touches the database. Then give the user the URL, the IDs and the next steps (a
     custom domain, the go-live checklist in [references/production.md](references/production.md)).

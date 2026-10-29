@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: migrations-in-start
+context:
+  scaffold_script: scaffold.sh

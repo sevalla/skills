@@ -7,9 +7,11 @@ Every framework needs the same four things. The table below lists only what diff
 2. **Pin the runtime.** `engines.node` in `package.json` (Nixpacks installs Node.js 22 otherwise),
    `.python-version`, `.ruby-version`, `go.mod`. Static sites ignore these: their version is the
    site's `node_version`.
-3. **Migrations in a `job` process** with `job_start_policy: "beforeDeployment"`
-   ([deploy.md](deploy.md#processes-workers-cron-jobs-and-migrations)), not in the build: the build
-   can't reach the database.
+3. **Migrations where the project runs them.** Keep its way: the start command, the build, CI or
+   by hand. A build can't reach a Sevalla database over the private network, so migrations in the
+   build only work against a database it can reach. When the project has migrations and nothing
+   runs them on deploy, a `job` process with `job_start_policy: "beforeDeployment"` does
+   ([deploy.md](deploy.md#processes-workers-cron-jobs-and-migrations)).
 4. **Build-time variables before the build.** Values the build inlines into the bundle
    (`NEXT_PUBLIC_*`, `VITE_*`, `PUBLIC_*`) only reach builds that start after you set them.
 
@@ -32,10 +34,10 @@ lockfile. You rarely need a Dockerfile.
 | Deno 2 | Application, `build_type: "dockerfile"` | the Dockerfile's `CMD` | Nixpacks installs Deno 1.36, which can't run Deno 2: build from a Dockerfile on the `denoland/deno` image. Read `PORT` | [deno](https://docs.sevalla.com/guides/javascript/deno.md) |
 | Turborepo or another workspace monorepo | One application per app | `NIXPACKS_START_CMD`, for example `pnpm --filter web start` | Build from the repository root (no `build_path`, which drops the root lockfile and shared packages) with `NIXPACKS_BUILD_CMD` filtered to the app (`pnpm turbo run build --filter=web`), both as variables. Deploy paths keep a push from deploying every app; they don't work with Bitbucket | [turborepo](https://docs.sevalla.com/guides/javascript/turborepo.md) |
 | Django | Application | `gunicorn <project>.wsgi --bind 0.0.0.0:$PORT` | `collectstatic` in the build (whitenoise serves the files); `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` from variables that include the `sevalla.app` domain and any custom domain | [django](https://docs.sevalla.com/guides/python/django/deploy.md) |
-| FastAPI | Application | `fastapi run <path>/main.py --port $PORT --forwarded-allow-ips '*'` | Alembic migrations in a `beforeDeployment` job | [fastapi](https://docs.sevalla.com/guides/python/fastapi/deploy.md) |
+| FastAPI | Application | `fastapi run <path>/main.py --port $PORT --forwarded-allow-ips '*'` | Alembic migrations (point 3) | [fastapi](https://docs.sevalla.com/guides/python/fastapi/deploy.md) |
 | Flask | Application | `gunicorn <module>:app --bind 0.0.0.0:$PORT` | | [flask](https://docs.sevalla.com/guides/python/flask/deploy.md) |
-| Laravel or other PHP | Application | the Nixpacks default (nginx and PHP-FPM) | `APP_KEY` as a variable; `php artisan migrate --force` in a `beforeDeployment` job | [nixpacks](https://docs.sevalla.com/applications/builds/nixpacks.md) |
-| Ruby on Rails | Application | `bundle exec rails server -b 0.0.0.0 -p $PORT` | `RAILS_ENV=production`, `SECRET_KEY_BASE` or `RAILS_MASTER_KEY`; `rails db:migrate` in a `beforeDeployment` job | [nixpacks](https://docs.sevalla.com/applications/builds/nixpacks.md) |
+| Laravel or other PHP | Application | the Nixpacks default (nginx and PHP-FPM) | `APP_KEY` as a variable; `php artisan migrate --force` (point 3) | [nixpacks](https://docs.sevalla.com/applications/builds/nixpacks.md) |
+| Ruby on Rails | Application | `bundle exec rails server -b 0.0.0.0 -p $PORT` | `RAILS_ENV=production`, `SECRET_KEY_BASE` or `RAILS_MASTER_KEY`; `rails db:migrate` (point 3) | [nixpacks](https://docs.sevalla.com/applications/builds/nixpacks.md) |
 | Go | Application | the built binary | Read the port from `PORT` | [nixpacks](https://docs.sevalla.com/applications/builds/nixpacks.md) |
 | Anything with a production Dockerfile | Application | the image's `CMD` | `build_type: "dockerfile"`, image for `linux/amd64`, the server on `PORT` | [dockerfile](https://docs.sevalla.com/applications/builds/dockerfile.md) |
 

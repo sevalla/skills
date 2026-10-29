@@ -27,7 +27,8 @@ https://docs.sevalla.com/applications/go-live-checklist.md):
 - The custom domain is active with SSL, the web process isn't on `h1`, and CAA records allow
   Sevalla's certificate authority.
 - The database is in the app's location, connected internally, with a recent manual backup.
-- Migrations run in a `beforeDeployment` job; changes reach production through staging;
+- Migrations run reliably on each deployment (a `beforeDeployment` job stops a deployment whose
+  migration fails); changes reach production through staging;
   automatic deployments are on or off on purpose; the user knows how to roll back.
 - A usage alert warns before spending passes the budget.
 
