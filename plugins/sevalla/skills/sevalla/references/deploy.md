@@ -32,16 +32,25 @@ push to deploy.
 
 | Field | Values |
 | --- | --- |
-| `build_type` | `nixpacks` (the default), `railpack` (its successor, in beta), `pack` (Cloud Native Buildpacks), `dockerfile` |
+| `build_type` | `ingot` (the default), `dockerfile`, `railpack`, `pack` (Cloud Native Buildpacks); `nixpacks` is deprecated |
 | `build_path` | The app's folder in a monorepo, for example `apps/web` |
 | `dockerfile_path`, `docker_context` | With `dockerfile` |
-| `nixpacks_version` | `1.29`, `1.39` or `1.41`, to pin Nixpacks |
 | `build_cache_enabled` | `false` turns the build cache off for every deployment |
 | `auto_deploy`, `default_branch` | Deploy on every push to that branch (`privateGit` only) |
 | `allow_deploy_paths` or `ignore_deploy_paths` | Globs that decide which pushes deploy; one or the other |
 
-Nixpacks and Railpack detect the language and need no configuration for most projects. Choose
-`dockerfile` when the repository has a Dockerfile that is meant for production.
+Ingot detects the language, framework, runtime version, package manager and start command,
+generates a Dockerfile from them on every build, and needs no configuration for most projects
+([frameworks.md](frameworks.md)). It ignores a Dockerfile in the repository: choose `dockerfile`
+when that one is meant for production. Don't move an existing app to another builder unless the
+user asks: Ingot doesn't read `nixpacks.toml` or `NIXPACKS_*` variables, and its image runs as a
+non-root user.
+
+**The Dockerfile a build used.** `listApplicationDockerfilesV3` lists the versions, newest first,
+for apps built with `ingot` or `dockerfile`; a deployment's `dockerfile_id` names its version, and
+`getApplicationDockerfileV3` returns its Dockerfile. For Ingot, `facts` is what it detected, each
+with the file it came from, and `processes` the workers and jobs it suggests. It creates none of
+them: weigh each against the project, the way it already runs migrations included.
 
 ## Processes: workers, cron jobs and migrations
 
@@ -82,7 +91,9 @@ running.
   `manage.py migrate`, `rails db:migrate` are).
 
 Change a process's command, port, health checks or schedule with `updateProcessV3`; run a cron job
-now with `triggerProcessCronV3`. New and changed processes take effect at the next deployment.
+now with `triggerProcessCronV3`, and see its runs of the last 30 days, with each failure's reason
+and exit code, with `listProcessCronRunsV3`. New and changed processes take effect at the next
+deployment.
 
 ## Databases
 

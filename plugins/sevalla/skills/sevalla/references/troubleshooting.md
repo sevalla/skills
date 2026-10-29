@@ -29,13 +29,17 @@ no build error.)
 ## Build
 
 `get_deployment_logs`. The last 100 lines usually show the cause; `errors_only` keeps the lines
-that mention an error, and `search` narrows to the text of one.
+that mention an error, and `search` narrows to the text of one. With Ingot, the log starts with
+its plan (language, version, package manager, start command, and the file each came from); a line
+starting with `✗` is the reason the build stopped, and the next line what to do about it. A build
+that passed before and fails now: compare the Dockerfile of the last successful deployment with
+the new one (`dockerfile_id`, `getApplicationDockerfileV3`).
 
 | The log says | Fix |
 | --- | --- |
 | The source code cannot be fetched, repository not found | Sevalla can't see the repository: `listGitProvidersV3` returns the link where the user grants access. Check `repo_url` and the branch |
-| No start command, no language detected | Wrong `build_path` for a monorepo, or no lockfile or manifest at that path |
-| The build fails on the language version | Pin it: `engines.node`, `.python-version` |
+| `No start command found`, no language detected | Wrong `build_path` (or `INGOT_APP`) for a monorepo, or no lockfile or manifest at that path. Otherwise set the web process's start command |
+| The build fails on the language version, or `no <language> version in this Ingot release satisfies` | Pin a maintained line: `engines.node`, `.python-version`, or `INGOT_<LANGUAGE>_VERSION` |
 | Lockfile missing or out of sync | Commit the lockfile after a local install |
 | `exit code: 126` | Usually a committed `node_modules` (or PHP `vendor`) folder: remove it, add it to `.gitignore`, push. Otherwise a script isn't executable |
 | A step needs the database (`ECONNREFUSED`, host not found) | The build can't reach databases: move migrations and data-dependent prerendering to a `beforeDeployment` job or to runtime |
@@ -56,6 +60,10 @@ as `ERROR` too, so search for the error text rather than filtering by `severity`
 | `Failed to deploy <process>. Please check the entrypoint.` | The start command doesn't exist in the image: fix it with `updateProcessV3` (`entrypoint`) |
 | `<job> has failed` or `<job> has timed out after <N>s` | The job's own output is in the runtime logs. Jobs have 10 minutes by default (`active_deadline_seconds`). Check the database variable and connection |
 | An ongoing action blocks the deployment | Another change, such as a resize, is running. Sevalla retries by itself |
+
+`EACCES` or `Permission denied` in the runtime logs of an app built with Ingot: its image runs as
+user `1000:1000`, which can write only to `/app` and `/tmp` and can't install packages. Write
+there, and add system packages with `INGOT_RUN_PACKAGES` instead.
 
 ## The running app
 

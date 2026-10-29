@@ -47,6 +47,7 @@ https://api.sevalla.com/v3/openapi.json.
 | Stop it until later / start it again | `suspendApplicationV3` / `activateApplicationV3` | `sevalla_api_update` |
 | Maintenance page (the update replaces the whole setting) | `updateApplicationMaintenanceModeV3` (`is_enabled`, `page_url`) | `sevalla_api_update` |
 | Maintenance page state | `getApplicationMaintenanceModeV3` | `sevalla_api_read` |
+| The Dockerfile each build used, and what Ingot detected | `listApplicationDockerfilesV3`, `getApplicationDockerfileV3` | `sevalla_api_read` |
 | Read the deployed repository | `getApplicationRepositoryFileV3`, `listApplicationRepositoryTreeV3`, `searchApplicationRepositoryV3` | `sevalla_api_read` |
 | Purge CDN and edge cache | `purgeApplicationCacheV3` | `sevalla_api_update` |
 | Delete (confirm first) | `deleteApplicationV3` | `sevalla_api_delete` |
@@ -61,6 +62,7 @@ https://api.sevalla.com/v3/openapi.json.
 | Start command, port, probes, schedule, job policy | `updateProcessV3` | `sevalla_api_update` |
 | Run one command in a running process | `execProcessCommandV3` (`command` as a list, `timeout` up to 60) | `sevalla_api_update` |
 | Run a cron job now | `triggerProcessCronV3` | `sevalla_api_update` |
+| A cron job's runs of the last 30 days | `listProcessCronRunsV3` | `sevalla_api_read` |
 | Attach or grow a disk | `updateProcessDiskV3` (`resource_type_id`, `mount_path`) | `sevalla_api_update` |
 | Delete a disk and its files / a process | `deleteProcessDiskV3` / `deleteProcessV3` | `sevalla_api_delete` |
 

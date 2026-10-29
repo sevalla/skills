@@ -91,7 +91,7 @@ Several requests have an operation of their own that a nearby tool only approxim
 | Let an idle app sleep and wake on the next request | hibernation: `updateApplicationV3` | suspending it |
 | Show visitors a maintenance page while the app keeps running | `updateApplicationMaintenanceModeV3` | suspending it |
 | Stop a deployment that is running or queued | `cancelDeploymentV3` (`cancelStaticSiteDeploymentV3` for a static site) | `rollback_deployment` |
-| Undo a deployment that broke a working app | `rollback_deployment` | redeploying an older branch |
+| Undo a deployment that broke a working app | `rollback_deployment` (to the last successful deployment of another commit) | redeploying an older branch |
 | Ship a tested build to the next stage | `promotePipelineV3` | `trigger_deployment` on production |
 | Apply changed runtime variables, no code change | `trigger_deployment` with `restart: true` (build-time values need a full deployment) | a full rebuild |
 | Rebuild everything (stale dependencies or base image) | `trigger_deployment` with `skip_build_cache: true` | |
@@ -132,9 +132,10 @@ detail for each step, static sites, Docker images, monorepos and CI/CD.
 5. **Create the app without deploying**: `create_application` with `deploy: false`, source
    `privateGit` (`publicGit` only when Sevalla has no access to a public repository: see
    [deploy.md](references/deploy.md#applications)). Then set what the build needs: `build_path`
-   for a subfolder, `build_type` for a Dockerfile (`updateApplicationV3`), and `auto_deploy` if
-   the user wants every push to deploy. A static site is `create_static_site` with its build
-   settings ([deploy.md](references/deploy.md#static-sites)); it deploys only with `deploy: true`.
+   for a subfolder, `build_type: "dockerfile"` to build the repository's own Dockerfile (Ingot,
+   the default, generates one) with `updateApplicationV3`, and `auto_deploy` if the user wants
+   every push to deploy. A static site is `create_static_site` with its build settings
+   ([deploy.md](references/deploy.md#static-sites)); it deploys only with `deploy: true`.
 6. **Add a database if the app needs one.** If the user didn't ask for one, ask first: a new one
    (which engine and size) or an existing one. Then `create_database` with
    `connect_to_application_id`, which connects them and stores the URL in `DATABASE_URL` (pass
