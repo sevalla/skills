@@ -9,6 +9,7 @@ How to change the `sevalla` skill and keep it correct. People and agents both wo
 plugins/sevalla/
   .claude-plugin/plugin.json        Plugin manifest: name, version, listing fields
   .mcp.json                         The Sevalla MCP server (https://mcp.sevalla.com/mcp)
+  README.md                         The plugin directory listing: what the plugin runs and sends
   assets/icon.png                   Listing icon, from the brand kit (social/avatar.png)
   skills/sevalla/
     SKILL.md                        Rules, interface choice, the deploy and debug workflows, routing
