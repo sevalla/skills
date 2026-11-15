@@ -2,7 +2,10 @@
 
 Cases for `claude plugin eval`. Each case is a prompt, graders, and fixed answers for the Sevalla MCP
 tools it needs (`mocks/`), so no run reaches a Sevalla account. How to write and run them:
-[AGENTS.md](../../../AGENTS.md#evals).
+[AGENTS.md](../../../AGENTS.md#evals). The five cases that build a project with a bash script
+(`deploy-with-database`, `express-port`, `migrations-in-start`, `spa-reload-404`,
+`spa-static-site`) live in [sevalla/skills-dev](https://github.com/sevalla/skills-dev), because the
+plugin directory accepts no scripts here. Copy them in to run all 11.
 
 ## Results for version 2.0.0
 

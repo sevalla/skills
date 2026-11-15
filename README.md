@@ -110,15 +110,20 @@ API, in the order the docs recommend.
 
 ## Development
 
+The check script and the eval cases that build a project live in
+[sevalla/skills-dev](https://github.com/sevalla/skills-dev), because the plugin directory accepts no scripts here. Clone it next to this
+repository.
+
 ```sh
 # Check every operation ID, MCP tool, CLI command, docs link and anchor in the skill
-node scripts/check.ts
+node ../skills-dev/scripts/check.ts
 
 # Validate the plugin and the marketplace
 claude plugin validate plugins/sevalla
 claude plugin validate .
 
 # Run the evals with the skill, then with the MCP server alone, and compare
+# (copy in the skills-dev cases first for all 11, as its README shows)
 claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet
 claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet --disallow-tools Skill
 ```

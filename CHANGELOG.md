@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The check script, its CI job and the five eval cases that build a project with `scaffold.sh`
+  moved to [sevalla/skills-dev](https://github.com/sevalla/skills-dev): the Claude plugin directory
+  accepts only Markdown, text, JSON, YAML and images from organizations that aren't verified.
+- `CLAUDE.md` imports `AGENTS.md` instead of being a symlink to it.
+
 ## v2.0.0
 
 The skill is rebuilt for the Sevalla MCP server's current tools, with the plugin connecting the
