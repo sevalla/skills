@@ -5,7 +5,7 @@ license: MIT
 compatibility: The Sevalla MCP server (https://mcp.sevalla.com/mcp), or the sevalla CLI (@sevalla/cli 2.0 or later, Node.js 24+), or the Sevalla REST API with an API key.
 metadata:
   author: Sevalla
-  version: "2.0.0"
+  version: "2.0.1"
 ---
 
 # Sevalla
