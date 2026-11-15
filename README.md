@@ -6,7 +6,6 @@
 
 **Teach your coding agent to deploy and run applications, databases and static sites on Sevalla.**
 
-[![CI](https://github.com/sevalla/skills/actions/workflows/ci.yml/badge.svg)](https://github.com/sevalla/skills/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-2.0.0-57534e)](plugins/sevalla/.claude-plugin/plugin.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-57534e)](LICENSE)
 
