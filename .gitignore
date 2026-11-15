@@ -4,3 +4,9 @@ node_modules/
 *.log
 .idea/
 plugins/sevalla/evals/results/
+# Eval cases from sevalla/skills-dev, copied in for a run
+plugins/sevalla/evals/deploy-with-database/
+plugins/sevalla/evals/express-port/
+plugins/sevalla/evals/migrations-in-start/
+plugins/sevalla/evals/spa-reload-404/
+plugins/sevalla/evals/spa-static-site/

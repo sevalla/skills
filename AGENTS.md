@@ -16,9 +16,12 @@ plugins/sevalla/
     references/                     Opened on demand: deploy, frameworks, troubleshooting,
                                     production, operations, cli
   evals/                            claude plugin eval cases; mocks/sevalla holds the MCP mocks
-scripts/check.ts                    Verifies the skill against the live API, docs and CLI
-.github/workflows/ci.yml            Runs the check on every push and every Monday
 ```
+
+Only Markdown, text, JSON, YAML and images go in this repository: the Claude plugin directory
+refuses scripts and programs from organizations that aren't verified. The check script, its CI
+job, and the eval cases that build a project with a bash script live in [sevalla/skills-dev](https://github.com/sevalla/skills-dev),
+cloned next to this repository.
 
 ## What the skill is for
 
@@ -51,7 +54,7 @@ operation ID.
 ## Check your change
 
 ```sh
-node scripts/check.ts
+node ../skills-dev/scripts/check.ts
 claude plugin validate plugins/sevalla
 claude plugin validate .
 ```
@@ -62,7 +65,8 @@ operation only a dedicated tool runs, a tool name isn't in `evals/mocks/sevalla/
 `sevalla` command or flag isn't in the CLI's schema, a docs.sevalla.com page isn't in `llms.txt`,
 a relative link or anchor is broken, or the version numbers disagree. It proves that names exist
 and match, not that every sentence about them is true. It needs Node.js 24 and network access,
-and uses `sevalla schema` when the CLI is installed, or `npx @sevalla/cli` otherwise.
+and uses `sevalla schema` when the CLI is installed, or `npx @sevalla/cli` otherwise. CI runs it
+in skills-dev every Monday, not on pushes here, so run it before you push.
 
 When the MCP server's tools change, refresh `_tools.json` from its `tools/list` response, for
 example by running the server in stdio mode from its repository:
@@ -74,8 +78,9 @@ printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocol
 ## Evals
 
 Each case in `plugins/sevalla/evals/` is a prompt, graders, and fixed answers for the MCP tools it
-needs, so runs never reach a Sevalla account. Cases with a `scaffold.sh` build a small project in
-the workspace first. Every other tool answers from `evals/mocks/sevalla/`: read tools with the MCP
+needs, so runs never reach a Sevalla account. Cases that build a small project in the workspace
+first need a `scaffold.sh`, so they live in skills-dev: copy them in before a run, as its README
+shows (`.gitignore` keeps them out of commits here). Every other tool answers from `evals/mocks/sevalla/`: read tools with the MCP
 server's real `404` message, write tools with a plausible success, so a "must not call" grader can
 fail. Keep mock answers in the real tools' format (capture them from the MCP server running against
 its fake API, `test/support/fake-api.ts` in the MCP repository), and don't put the answer in a field
@@ -90,7 +95,8 @@ claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit
 claude plugin eval plugins/sevalla --ablation none --scaffold --allow-tools Edit Write --judge-model sonnet --disallow-tools Skill
 ```
 
-Add `--model haiku` or `--model sonnet` to check smaller models. Each run is a real model call on
+Add `--model haiku` or `--model sonnet` to check smaller models. Without the skills-dev cases
+copied in, `--scaffold` has nothing to run and the suite covers 6 of the 11 cases. Each run is a real model call on
 your account. A good new case is one the MCP server alone gets wrong: write it from a real support
 case or a failed agent session, and check that it fails with `--disallow-tools Skill` before you
 change the skill to fix it.
